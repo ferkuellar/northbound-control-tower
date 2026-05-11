@@ -18,12 +18,15 @@ if TYPE_CHECKING:
 
 class CloudProvider(StrEnum):
     AWS = "aws"
+    OCI = "oci"
 
 
 class CloudAccountAuthType(StrEnum):
     ACCESS_KEYS = "access_keys"
     ROLE_ARN = "role_arn"
     PROFILE = "profile"
+    OCI_CONFIG = "oci_config"
+    OCI_API_KEY = "oci_api_key"
 
 
 class CloudAccount(Base, TimestampMixin):
@@ -40,6 +43,13 @@ class CloudAccount(Base, TimestampMixin):
     role_arn: Mapped[str | None] = mapped_column(String(512), nullable=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     default_region: Mapped[str] = mapped_column(String(64), nullable=False)
+    tenancy_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    user_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    fingerprint: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    private_key: Mapped[str | None] = mapped_column(String(4096), nullable=True)
+    private_key_passphrase: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    compartment_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     tenant: Mapped["Tenant"] = relationship()

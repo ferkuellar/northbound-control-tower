@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(default=60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     aws_default_region: str = Field(default="us-east-1", alias="AWS_DEFAULT_REGION")
     aws_scan_timeout_seconds: int = Field(default=300, alias="AWS_SCAN_TIMEOUT_SECONDS")
+    oci_default_region: str = Field(default="us-ashburn-1", alias="OCI_DEFAULT_REGION")
+    oci_scan_timeout_seconds: int = Field(default=300, alias="OCI_SCAN_TIMEOUT_SECONDS")
     ai_provider: str = Field(default="none", alias="AI_PROVIDER")
     ai_api_key: str | None = Field(default=None, alias="AI_API_KEY")
     ai_base_url: str | None = Field(default=None, alias="AI_BASE_URL")

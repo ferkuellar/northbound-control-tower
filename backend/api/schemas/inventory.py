@@ -19,6 +19,18 @@ class AWSCloudAccountCreate(BaseModel):
     default_region: str = Field(default="us-east-1", min_length=1, max_length=64)
 
 
+class OCICloudAccountCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    auth_type: CloudAccountAuthType
+    tenancy_ocid: str | None = Field(default=None, max_length=255)
+    user_ocid: str | None = Field(default=None, max_length=255)
+    fingerprint: str | None = Field(default=None, max_length=255)
+    private_key: str | None = Field(default=None, max_length=4096)
+    private_key_passphrase: str | None = Field(default=None, max_length=1024)
+    region: str = Field(default="us-ashburn-1", min_length=1, max_length=64)
+    compartment_ocid: str | None = Field(default=None, max_length=255)
+
+
 class CloudAccountRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -31,6 +43,8 @@ class CloudAccountRead(BaseModel):
     role_arn: str | None
     external_id: str | None
     default_region: str
+    region: str | None
+    compartment_ocid: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
