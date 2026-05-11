@@ -61,7 +61,7 @@ services:
     command: npm run dev -- --hostname 0.0.0.0
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: nct-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nct}
