@@ -20,7 +20,7 @@ ps:
 	docker compose ps
 
 backend-test:
-	docker compose run --rm backend pytest
+	docker compose run --rm backend python -m pytest
 
 backend-lint:
 	docker compose run --rm backend ruff check .

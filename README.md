@@ -39,9 +39,10 @@ Default Grafana credentials are `admin` / `admin` for local development only. Ch
 ```bash
 make compose-config
 docker compose ps
-curl http://localhost:8000/health/live
-curl http://localhost:8000/health/ready
-curl http://localhost:8000/api/v1/platform/scope
+curl http://localhost:8000/health
+curl http://localhost:8000/health/db
+curl http://localhost:8000/health/redis
+curl http://localhost:8000/api/v1/status
 ```
 
 ## Development Standards

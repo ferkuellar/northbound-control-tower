@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
-from api.routes import health, platform
+from api.router import api_router
+from api.routes import health
 from core.config import settings
+from core.errors import register_exception_handlers
 from core.logging import configure_logging
 
 
@@ -24,8 +26,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    register_exception_handlers(app)
     app.include_router(health.router, tags=["health"])
-    app.include_router(platform.router, prefix="/api/v1/platform", tags=["platform"])
+    app.include_router(api_router)
     app.mount("/metrics", make_asgi_app())
 
     return app

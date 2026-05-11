@@ -5,7 +5,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
 
     app_name: str = "Northbound Control Tower"
     app_version: str = "0.1.0"
@@ -14,11 +19,21 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct"
     redis_url: str = "redis://redis:6379/0"
+    celery_broker_url: str | None = None
+    celery_result_backend: str | None = None
     backend_cors_origins_raw: str = Field(default="http://localhost:3000", alias="BACKEND_CORS_ORIGINS")
 
     @property
     def backend_cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.backend_cors_origins_raw.split(",") if origin.strip()]
+
+    @property
+    def celery_broker(self) -> str:
+        return self.celery_broker_url or self.redis_url
+
+    @property
+    def celery_backend(self) -> str:
+        return self.celery_result_backend or self.redis_url
 
 
 @lru_cache

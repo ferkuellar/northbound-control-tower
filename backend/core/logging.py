@@ -7,8 +7,10 @@ from core.config import settings
 
 
 def configure_logging() -> None:
+    logging.captureWarnings(True)
+
     handler = logging.StreamHandler(sys.stdout)
-    formatter = JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    formatter = JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s %(pathname)s %(lineno)d")
     handler.setFormatter(formatter)
 
     root_logger = logging.getLogger()
