@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(default="change-me-only-for-local-development", alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     jwt_access_token_expire_minutes: int = Field(default=60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
+    aws_default_region: str = Field(default="us-east-1", alias="AWS_DEFAULT_REGION")
+    aws_scan_timeout_seconds: int = Field(default=300, alias="AWS_SCAN_TIMEOUT_SECONDS")
+    ai_provider: str = Field(default="none", alias="AI_PROVIDER")
+    ai_api_key: str | None = Field(default=None, alias="AI_API_KEY")
+    ai_base_url: str | None = Field(default=None, alias="AI_BASE_URL")
+    ai_model: str | None = Field(default=None, alias="AI_MODEL")
+    deepseek_api_key: str | None = Field(default=None, alias="DEEPSEEK_API_KEY")
+    deepseek_base_url: str = Field(default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL")
+    deepseek_model: str = Field(default="deepseek-chat", alias="DEEPSEEK_MODEL")
     backend_cors_origins_raw: str = Field(default="http://localhost:3000", alias="BACKEND_CORS_ORIGINS")
 
     @property
