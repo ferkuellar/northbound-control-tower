@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from models.resource import ResourceType
+from normalization.contracts import BaseProviderNormalizer
 
 
 def _tags_from_aws(tags: list[dict[str, Any]] | None) -> dict[str, str]:
@@ -205,3 +206,45 @@ def normalize_cloudwatch_alarm(alarm: dict[str, Any], region: str) -> dict[str, 
             "comparison_operator": alarm.get("ComparisonOperator"),
         },
     )
+
+
+class AWSProviderNormalizer(BaseProviderNormalizer):
+    def normalize_compute(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return normalize_ec2_instance(resource, region or "global")
+
+    def normalize_block_storage(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return normalize_ebs_volume(resource, region or "global")
+
+    def normalize_object_storage(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return normalize_s3_bucket(resource, region)
+
+    def normalize_database(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return normalize_rds_instance(resource, region or "global")
+
+    def normalize_network(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        if "SubnetId" in resource:
+            return normalize_subnet(resource, region or "global")
+        if "GroupId" in resource:
+            return normalize_security_group(resource, region or "global")
+        return normalize_vpc(resource, region or "global")
+
+    def normalize_identity(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        if "RoleName" in resource:
+            return normalize_iam_role(resource)
+        if "PolicyName" in resource:
+            return normalize_iam_policy(resource)
+        return normalize_iam_user(resource)
+
+    def normalize_monitoring(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return normalize_cloudwatch_alarm(resource, region or "global")
+
+    def normalize_unknown(self, resource: dict[str, Any], region: str | None = None) -> dict[str, Any]:
+        return _base(
+            resource_type=ResourceType.UNKNOWN,
+            resource_id=str(resource.get("id") or resource.get("Arn") or resource.get("Name") or "unknown"),
+            name=resource.get("Name"),
+            region=region or "global",
+            raw_type=str(resource.get("raw_type") or "AWS::Unknown"),
+            status="unknown",
+            metadata={"provider_details": resource},
+        )

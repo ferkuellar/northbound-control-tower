@@ -57,15 +57,29 @@ class ResourceRead(BaseModel):
     tenant_id: uuid.UUID
     cloud_account_id: uuid.UUID
     provider: CloudProvider
+    resource_category: ResourceType
     resource_type: ResourceType
     resource_id: str
+    fingerprint: str | None
     name: str | None
     region: str | None
+    account_id: str | None
+    compartment_id: str | None
     availability_zone: str | None
+    availability_domain: str | None
     raw_type: str | None
     status: str | None
+    lifecycle_status: str | None
+    exposure_level: str | None
+    environment: str | None
+    criticality: str | None
+    owner: str | None
+    cost_center: str | None
+    application: str | None
+    service_name: str | None
     tags: dict[str, Any]
     metadata_json: dict[str, Any]
+    relationships: dict[str, Any] | list[dict[str, Any]]
     discovered_at: datetime
     created_at: datetime
     updated_at: datetime

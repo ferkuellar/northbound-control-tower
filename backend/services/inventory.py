@@ -15,9 +15,11 @@ from models.cloud_account import CloudAccount, CloudProvider
 from models.inventory_scan import InventoryScan, InventoryScanStatus
 from models.resource import Resource
 from models.user import User
+from normalization.service import ResourceNormalizationService
 from services.audit_log import create_audit_log
 
 logger = logging.getLogger(__name__)
+normalization_service = ResourceNormalizationService()
 
 
 def create_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_user: User) -> InventoryScan:
@@ -41,14 +43,25 @@ def upsert_resource(
     cloud_account_id: uuid.UUID,
     normalized: dict[str, Any],
 ) -> Resource:
-    resource = db.scalar(
-        select(Resource).where(
-            Resource.tenant_id == tenant_id,
-            Resource.cloud_account_id == cloud_account_id,
-            Resource.provider == normalized["provider"],
-            Resource.resource_id == normalized["resource_id"],
+    fingerprint = normalized.get("fingerprint")
+    resource = None
+    if fingerprint:
+        resource = db.scalar(
+            select(Resource).where(
+                Resource.tenant_id == tenant_id,
+                Resource.cloud_account_id == cloud_account_id,
+                Resource.fingerprint == fingerprint,
+            )
         )
-    )
+    if resource is None:
+        resource = db.scalar(
+            select(Resource).where(
+                Resource.tenant_id == tenant_id,
+                Resource.cloud_account_id == cloud_account_id,
+                Resource.provider == normalized["provider"],
+                Resource.resource_id == normalized["resource_id"],
+            )
+        )
     if resource is None:
         resource = Resource(
             tenant_id=tenant_id,
@@ -58,16 +71,37 @@ def upsert_resource(
         )
         db.add(resource)
 
-    resource.resource_type = normalized["resource_type"]
+    resource.resource_type = normalized["resource_category"]
     resource.name = normalized.get("name")
     resource.region = normalized.get("region")
+    resource.account_id = normalized.get("account_id")
+    resource.compartment_id = normalized.get("compartment_id")
     resource.availability_zone = normalized.get("availability_zone")
+    resource.availability_domain = normalized.get("availability_domain")
     resource.raw_type = normalized.get("raw_type")
-    resource.status = normalized.get("status")
+    resource.status = normalized.get("lifecycle_status")
+    resource.lifecycle_status = normalized.get("lifecycle_status")
+    resource.exposure_level = normalized.get("exposure_level")
+    resource.environment = normalized.get("environment")
+    resource.criticality = normalized.get("criticality")
+    resource.owner = normalized.get("owner")
+    resource.cost_center = normalized.get("cost_center")
+    resource.application = normalized.get("application")
+    resource.service_name = normalized.get("service_name")
+    resource.fingerprint = normalized.get("fingerprint")
     resource.tags = normalized.get("tags", {})
     resource.metadata_json = normalized.get("metadata", {})
+    resource.relationships = normalized.get("relationships", {})
     resource.discovered_at = normalized.get("discovered_at", datetime.now(UTC))
     return resource
+
+
+def category_counts(resources: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for resource in resources:
+        category = str(resource.get("resource_category", "unknown"))
+        counts[category] = counts.get(category, 0) + 1
+    return counts
 
 
 def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_user: User) -> InventoryScan:
@@ -96,7 +130,13 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
     db.commit()
     try:
         collector = AWSInventoryCollector(cloud_account, timeout_seconds=settings.aws_scan_timeout_seconds)
-        normalized_resources, partial_errors = collector.collect_all()
+        collected_resources, partial_errors = collector.collect_all()
+        normalized_resources = normalization_service.normalize_many(
+            collected_resources,
+            tenant_id=scan.tenant_id,
+            cloud_account_id=scan.cloud_account_id,
+            account_id=cloud_account.account_id,
+        )
         for normalized in normalized_resources:
             upsert_resource(
                 db,
@@ -128,7 +168,11 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
             action="aws_inventory_scan_completed",
             resource_type="inventory_scan",
             resource_id=str(scan.id),
-            metadata={"resources_discovered": scan.resources_discovered, "partial_errors": len(partial_errors)},
+            metadata={
+                "resources_discovered": scan.resources_discovered,
+                "partial_errors": len(partial_errors),
+                "categories": category_counts(normalized_resources),
+            },
         )
         db.commit()
         db.refresh(scan)
@@ -141,6 +185,7 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
                 "provider": scan.provider,
                 "resources_discovered": scan.resources_discovered,
                 "partial_errors": len(partial_errors),
+                "categories": category_counts(normalized_resources),
             },
         )
         return scan
@@ -197,7 +242,13 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
     db.commit()
     try:
         collector = OCIInventoryCollector(cloud_account, timeout_seconds=settings.oci_scan_timeout_seconds)
-        normalized_resources, partial_errors, compartment_count = collector.collect_all()
+        collected_resources, partial_errors, compartment_count = collector.collect_all()
+        normalized_resources = normalization_service.normalize_many(
+            collected_resources,
+            tenant_id=scan.tenant_id,
+            cloud_account_id=scan.cloud_account_id,
+            account_id=cloud_account.account_id,
+        )
         for normalized in normalized_resources:
             upsert_resource(
                 db,
@@ -237,6 +288,7 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
                 "resources_discovered": scan.resources_discovered,
                 "compartments_scanned": compartment_count,
                 "partial_errors": len(partial_errors),
+                "categories": category_counts(normalized_resources),
             },
         )
         db.commit()
@@ -251,6 +303,7 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
                 "resources_discovered": scan.resources_discovered,
                 "compartments_scanned": compartment_count,
                 "partial_errors": len(partial_errors),
+                "categories": category_counts(normalized_resources),
             },
         )
         return scan

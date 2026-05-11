@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from models.resource import ResourceType
+from normalization.contracts import BaseProviderNormalizer
 
 
 def _as_dict(resource: Any) -> dict[str, Any]:
@@ -148,3 +149,46 @@ def normalize_alarm(alarm: Any, region: str) -> dict[str, Any]:
             "severity": data.get("severity"),
         },
     )
+
+
+class OCIProviderNormalizer(BaseProviderNormalizer):
+    def normalize_compute(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        return normalize_compute_instance(resource, region or "global")
+
+    def normalize_block_storage(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        return normalize_block_volume(resource, region or "global")
+
+    def normalize_object_storage(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        return self.normalize_unknown(resource, region)
+
+    def normalize_database(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        return self.normalize_unknown(resource, region)
+
+    def normalize_network(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        data = _as_dict(resource)
+        raw_type = data.get("raw_type") or "OCI::Core::Network"
+        if "shape_name" in data:
+            return normalize_load_balancer(resource, region or "global")
+        return normalize_network_resource(resource, region or "global", raw_type=raw_type)
+
+    def normalize_identity(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        data = _as_dict(resource)
+        if data.get("compartment_id") or data.get("description"):
+            return normalize_compartment(resource, region or "global")
+        return normalize_identity_resource(resource, region or "global", raw_type=data.get("raw_type") or "OCI::Identity::Resource")
+
+    def normalize_monitoring(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        return normalize_alarm(resource, region or "global")
+
+    def normalize_unknown(self, resource: Any, region: str | None = None) -> dict[str, Any]:
+        data = _as_dict(resource)
+        return _base(
+            resource_type=ResourceType.UNKNOWN,
+            resource_id=str(data.get("id") or "unknown"),
+            name=data.get("display_name") or data.get("name"),
+            region=region or "global",
+            raw_type=str(data.get("raw_type") or "OCI::Unknown"),
+            status=data.get("lifecycle_state") or "unknown",
+            tags=_oci_tags(data),
+            metadata={"provider_details": data},
+        )

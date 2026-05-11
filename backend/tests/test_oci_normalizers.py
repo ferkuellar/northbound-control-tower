@@ -1,9 +1,13 @@
 from collectors.oci.normalizers import (
+    OCIProviderNormalizer,
+    normalize_alarm,
     normalize_block_volume,
     normalize_compartment,
     normalize_compute_instance,
+    normalize_load_balancer,
     normalize_network_resource,
 )
+from normalization.contracts import BaseProviderNormalizer
 
 
 def test_normalize_oci_compute_instance_preserves_tags() -> None:
@@ -81,3 +85,39 @@ def test_normalize_oci_compartment() -> None:
     assert resource["resource_type"] == "identity"
     assert resource["name"] == "Security"
     assert resource["status"] == "ACTIVE"
+
+
+def test_normalize_oci_load_balancer() -> None:
+    resource = normalize_load_balancer(
+        {
+            "id": "ocid1.loadbalancer.oc1..example",
+            "display_name": "public-lb",
+            "lifecycle_state": "ACTIVE",
+            "shape_name": "flexible",
+            "compartment_id": "ocid1.compartment.oc1..example",
+        },
+        "us-ashburn-1",
+    )
+
+    assert resource["resource_type"] == "network"
+    assert resource["raw_type"] == "OCI::LoadBalancer::LoadBalancer"
+    assert resource["metadata"]["shape_name"] == "flexible"
+
+
+def test_normalize_oci_alarm() -> None:
+    resource = normalize_alarm(
+        {
+            "id": "ocid1.alarm.oc1..example",
+            "display_name": "cpu-high",
+            "lifecycle_state": "ACTIVE",
+            "severity": "CRITICAL",
+        },
+        "us-ashburn-1",
+    )
+
+    assert resource["resource_type"] == "monitoring"
+    assert resource["metadata"]["severity"] == "CRITICAL"
+
+
+def test_oci_provider_normalizer_conforms_to_contract() -> None:
+    assert isinstance(OCIProviderNormalizer(), BaseProviderNormalizer)
