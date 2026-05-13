@@ -1,0 +1,135 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum(rate(http_requests_total[5m]))", "legendFormat": "requests/sec"}],
+      "title": "HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}],
+      "title": "HTTP Latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))", "legendFormat": "5xx/sec"}],
+      "title": "HTTP Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "id": 4,
+      "targets": [{"expr": "sum(increase(inventory_scans_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Inventory Scans",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "id": 5,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(inventory_scan_duration_seconds_bucket[5m])) by (le, provider))", "legendFormat": "{{provider}} p95"}],
+      "title": "Inventory Scan Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "id": 6,
+      "targets": [{"expr": "sum(increase(findings_runs_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Findings Runs",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "id": 7,
+      "targets": [
+        {"expr": "sum(increase(findings_created_total[24h])) by (provider)", "legendFormat": "{{provider}} created"},
+        {"expr": "sum(increase(findings_updated_total[24h])) by (provider)", "legendFormat": "{{provider}} updated"}
+      ],
+      "title": "Findings Created/Updated",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "id": 8,
+      "targets": [{"expr": "sum(increase(scoring_runs_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Score Calculations",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "id": 9,
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(ai_analysis_duration_seconds_bucket[5m])) by (le, ai_provider))", "legendFormat": "{{ai_provider}} p95"},
+        {"expr": "sum(rate(ai_analysis_failures_total[5m])) by (ai_provider)", "legendFormat": "{{ai_provider}} failures/sec"}
+      ],
+      "title": "AI Analysis Latency/Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "id": 10,
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum(rate(report_generation_duration_seconds_bucket[5m])) by (le, report_type))", "legendFormat": "{{report_type}} p95"},
+        {"expr": "sum(rate(report_generation_failures_total[5m])) by (report_type)", "legendFormat": "{{report_type}} failures/sec"}
+      ],
+      "title": "Report Generation Latency/Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 24},
+      "id": 11,
+      "targets": [{"expr": "time() - process_start_time_seconds", "legendFormat": "backend uptime"}],
+      "title": "Backend Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 24},
+      "id": 12,
+      "targets": [{"expr": "sum(http_requests_in_progress)", "legendFormat": "in progress"}],
+      "title": "Requests In Progress",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["northbound", "platform", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Northbound Control Tower - Platform Overview",
+  "uid": "northbound-platform-overview",
+  "version": 1,
+  "weekStart": ""
+}

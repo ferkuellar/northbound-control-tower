@@ -15,7 +15,13 @@ class Settings(BaseSettings):
     app_name: str = "Northbound Control Tower"
     app_version: str = "0.1.0"
     app_env: str = "development"
-    log_level: str = "INFO"
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    log_format: str = Field(default="json", alias="LOG_FORMAT")
+    observability_enabled: bool = Field(default=True, alias="OBSERVABILITY_ENABLED")
+    prometheus_metrics_enabled: bool = Field(default=True, alias="PROMETHEUS_METRICS_ENABLED")
+    otel_tracing_enabled: bool = Field(default=True, alias="OTEL_TRACING_ENABLED")
+    otel_service_name: str = Field(default="northbound-control-tower-backend", alias="OTEL_SERVICE_NAME")
+    otel_exporter_otlp_endpoint: str = Field(default="http://otel-collector:4317", alias="OTEL_EXPORTER_OTLP_ENDPOINT")
 
     database_url: str = "postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct"
     redis_url: str = "redis://redis:6379/0"

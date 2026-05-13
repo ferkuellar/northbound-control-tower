@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -16,6 +17,13 @@ from models.inventory_scan import InventoryScan, InventoryScanStatus
 from models.resource import Resource
 from models.user import User
 from normalization.service import ResourceNormalizationService
+from observability.instruments import operation_span
+from observability.metrics import (
+    INVENTORY_RESOURCES_DISCOVERED_TOTAL,
+    INVENTORY_SCAN_DURATION_SECONDS,
+    INVENTORY_SCAN_FAILURES_TOTAL,
+    INVENTORY_SCANS_TOTAL,
+)
 from services.audit_log import create_audit_log
 
 logger = logging.getLogger(__name__)
@@ -105,6 +113,7 @@ def category_counts(resources: list[dict[str, Any]]) -> dict[str, int]:
 
 
 def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_user: User) -> InventoryScan:
+    started = time.perf_counter()
     scan = create_inventory_scan(db, cloud_account=cloud_account, current_user=current_user)
     logger.info(
         "AWS inventory scan started",
@@ -129,14 +138,15 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
     scan.status = InventoryScanStatus.RUNNING.value
     db.commit()
     try:
-        collector = AWSInventoryCollector(cloud_account, timeout_seconds=settings.aws_scan_timeout_seconds)
-        collected_resources, partial_errors = collector.collect_all()
-        normalized_resources = normalization_service.normalize_many(
-            collected_resources,
-            tenant_id=scan.tenant_id,
-            cloud_account_id=scan.cloud_account_id,
-            account_id=cloud_account.account_id,
-        )
+        with operation_span("inventory.scan", provider=CloudProvider.AWS.value, operation_name="aws_inventory_scan"):
+            collector = AWSInventoryCollector(cloud_account, timeout_seconds=settings.aws_scan_timeout_seconds)
+            collected_resources, partial_errors = collector.collect_all()
+            normalized_resources = normalization_service.normalize_many(
+                collected_resources,
+                tenant_id=scan.tenant_id,
+                cloud_account_id=scan.cloud_account_id,
+                account_id=cloud_account.account_id,
+            )
         for normalized in normalized_resources:
             upsert_resource(
                 db,
@@ -176,6 +186,10 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
         )
         db.commit()
         db.refresh(scan)
+        duration = time.perf_counter() - started
+        INVENTORY_SCANS_TOTAL.labels(provider=CloudProvider.AWS.value, status="completed").inc()
+        INVENTORY_SCAN_DURATION_SECONDS.labels(provider=CloudProvider.AWS.value, status="completed").observe(duration)
+        INVENTORY_RESOURCES_DISCOVERED_TOTAL.labels(provider=CloudProvider.AWS.value).inc(scan.resources_discovered)
         logger.info(
             "AWS inventory scan completed",
             extra={
@@ -204,6 +218,10 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
         )
         db.commit()
         db.refresh(scan)
+        duration = time.perf_counter() - started
+        INVENTORY_SCANS_TOTAL.labels(provider=CloudProvider.AWS.value, status="failed").inc()
+        INVENTORY_SCAN_DURATION_SECONDS.labels(provider=CloudProvider.AWS.value, status="failed").observe(duration)
+        INVENTORY_SCAN_FAILURES_TOTAL.labels(provider=CloudProvider.AWS.value).inc()
         logger.exception(
             "AWS inventory scan failed",
             extra={
@@ -217,6 +235,7 @@ def run_aws_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
 
 
 def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_user: User) -> InventoryScan:
+    started = time.perf_counter()
     scan = create_inventory_scan(db, cloud_account=cloud_account, current_user=current_user)
     logger.info(
         "OCI inventory scan started",
@@ -241,14 +260,15 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
     scan.status = InventoryScanStatus.RUNNING.value
     db.commit()
     try:
-        collector = OCIInventoryCollector(cloud_account, timeout_seconds=settings.oci_scan_timeout_seconds)
-        collected_resources, partial_errors, compartment_count = collector.collect_all()
-        normalized_resources = normalization_service.normalize_many(
-            collected_resources,
-            tenant_id=scan.tenant_id,
-            cloud_account_id=scan.cloud_account_id,
-            account_id=cloud_account.account_id,
-        )
+        with operation_span("inventory.scan", provider=CloudProvider.OCI.value, operation_name="oci_inventory_scan"):
+            collector = OCIInventoryCollector(cloud_account, timeout_seconds=settings.oci_scan_timeout_seconds)
+            collected_resources, partial_errors, compartment_count = collector.collect_all()
+            normalized_resources = normalization_service.normalize_many(
+                collected_resources,
+                tenant_id=scan.tenant_id,
+                cloud_account_id=scan.cloud_account_id,
+                account_id=cloud_account.account_id,
+            )
         for normalized in normalized_resources:
             upsert_resource(
                 db,
@@ -293,6 +313,10 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
         )
         db.commit()
         db.refresh(scan)
+        duration = time.perf_counter() - started
+        INVENTORY_SCANS_TOTAL.labels(provider=CloudProvider.OCI.value, status="completed").inc()
+        INVENTORY_SCAN_DURATION_SECONDS.labels(provider=CloudProvider.OCI.value, status="completed").observe(duration)
+        INVENTORY_RESOURCES_DISCOVERED_TOTAL.labels(provider=CloudProvider.OCI.value).inc(scan.resources_discovered)
         logger.info(
             "OCI inventory scan completed",
             extra={
@@ -322,6 +346,10 @@ def run_oci_inventory_scan(db: Session, *, cloud_account: CloudAccount, current_
         )
         db.commit()
         db.refresh(scan)
+        duration = time.perf_counter() - started
+        INVENTORY_SCANS_TOTAL.labels(provider=CloudProvider.OCI.value, status="failed").inc()
+        INVENTORY_SCAN_DURATION_SECONDS.labels(provider=CloudProvider.OCI.value, status="failed").observe(duration)
+        INVENTORY_SCAN_FAILURES_TOTAL.labels(provider=CloudProvider.OCI.value).inc()
         logger.exception(
             "OCI inventory scan failed",
             extra={

@@ -17,6 +17,8 @@ from ai.validators import validate_ai_output
 from core.config import settings
 from models.ai_analysis import AIAnalysis
 from models.user import User
+from observability.instruments import operation_span
+from observability.metrics import AI_ANALYSIS_DURATION_SECONDS, AI_ANALYSIS_FAILURES_TOTAL, AI_ANALYSIS_REQUESTS_TOTAL
 from services.audit_log import create_audit_log
 
 
@@ -96,15 +98,21 @@ class AIAnalysisService:
         )
 
         try:
-            provider = get_ai_provider(provider_name)
-            context = self.context_preview(
-                current_user=current_user,
-                cloud_account_id=request.cloud_account_id,
-                cloud_provider=request.cloud_provider,
-            )
-            prompt = build_prompt(request.analysis_type, context)
-            raw_text = provider.generate_analysis(prompt, settings.ai_max_tokens, settings.ai_temperature)
-            output = validate_ai_output(raw_text, context=context)
+            with operation_span(
+                "ai.analysis",
+                provider=provider_name.value,
+                analysis_type=request.analysis_type.value,
+                operation_name="ai_analysis",
+            ):
+                provider = get_ai_provider(provider_name)
+                context = self.context_preview(
+                    current_user=current_user,
+                    cloud_account_id=request.cloud_account_id,
+                    cloud_provider=request.cloud_provider,
+                )
+                prompt = build_prompt(request.analysis_type, context)
+                raw_text = provider.generate_analysis(prompt, settings.ai_max_tokens, settings.ai_temperature)
+                output = validate_ai_output(raw_text, context=context)
             analysis.status = AIAnalysisStatus.COMPLETED.value
             analysis.input_summary = context
             analysis.output = output
@@ -124,11 +132,22 @@ class AIAnalysisService:
                     "execution_time_ms": int((time.perf_counter() - started) * 1000),
                 },
             )
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, request.analysis_type.value, "completed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, request.analysis_type.value, "completed").observe(duration)
         except (AIProviderConfigurationError, AIOutputValidationError, ValueError) as exc:
             self._fail_analysis(analysis, current_user=current_user, error=str(exc), started=started)
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, request.analysis_type.value, "failed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, request.analysis_type.value, "failed").observe(duration)
+            AI_ANALYSIS_FAILURES_TOTAL.labels(provider_name.value, request.analysis_type.value).inc()
             raise AIAnalysisError(str(exc)) from exc
         except Exception as exc:
             self._fail_analysis(analysis, current_user=current_user, error="AI provider request failed", started=started)
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, request.analysis_type.value, "failed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, request.analysis_type.value, "failed").observe(duration)
+            AI_ANALYSIS_FAILURES_TOTAL.labels(provider_name.value, request.analysis_type.value).inc()
             raise AIAnalysisError("AI provider request failed") from exc
 
         self.db.commit()

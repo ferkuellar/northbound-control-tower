@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 
@@ -13,6 +14,8 @@ from findings.enums import CloudProvider, FindingStatus
 from models.cloud_account import CloudAccount
 from models.finding import Finding
 from models.user import User
+from observability.instruments import operation_span
+from observability.metrics import FINDINGS_CREATED_TOTAL, FINDINGS_RUN_DURATION_SECONDS, FINDINGS_RUNS_TOTAL, FINDINGS_UPDATED_TOTAL, provider_label
 from services.audit_log import create_audit_log
 
 logger = logging.getLogger(__name__)
@@ -25,6 +28,7 @@ def run_findings(
     cloud_account_id: uuid.UUID | None = None,
     provider: str | None = None,
 ) -> FindingsRunSummary:
+    started = time.perf_counter()
     normalized_provider = _validate_provider(provider)
     if cloud_account_id:
         cloud_account = db.scalar(
@@ -57,11 +61,12 @@ def run_findings(
         metadata={"cloud_account_id": str(cloud_account_id) if cloud_account_id else None, "provider": normalized_provider},
     )
     try:
-        summary = FindingsEngine(db).run(
-            tenant_id=current_user.tenant_id,
-            cloud_account_id=cloud_account_id,
-            provider=normalized_provider,
-        )
+        with operation_span("findings.run", provider=provider_label(normalized_provider), operation_name="findings_run"):
+            summary = FindingsEngine(db).run(
+                tenant_id=current_user.tenant_id,
+                cloud_account_id=cloud_account_id,
+                provider=normalized_provider,
+            )
         create_audit_log(
             db,
             tenant_id=current_user.tenant_id,
@@ -78,6 +83,12 @@ def run_findings(
             },
         )
         db.commit()
+        duration = time.perf_counter() - started
+        metric_provider = provider_label(normalized_provider)
+        FINDINGS_RUNS_TOTAL.labels(provider=metric_provider, status="completed").inc()
+        FINDINGS_RUN_DURATION_SECONDS.labels(provider=metric_provider, status="completed").observe(duration)
+        FINDINGS_CREATED_TOTAL.labels(provider=metric_provider).inc(summary.findings_created)
+        FINDINGS_UPDATED_TOTAL.labels(provider=metric_provider).inc(summary.findings_updated)
         logger.info(
             "Findings run completed",
             extra={
@@ -102,6 +113,9 @@ def run_findings(
             metadata={"cloud_account_id": str(cloud_account_id) if cloud_account_id else None, "provider": normalized_provider, "error": str(exc)},
         )
         db.commit()
+        metric_provider = provider_label(normalized_provider)
+        FINDINGS_RUNS_TOTAL.labels(provider=metric_provider, status="failed").inc()
+        FINDINGS_RUN_DURATION_SECONDS.labels(provider=metric_provider, status="failed").observe(time.perf_counter() - started)
         logger.exception(
             "Findings run failed",
             extra={

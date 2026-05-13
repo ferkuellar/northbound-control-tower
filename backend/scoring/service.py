@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 
 from fastapi import HTTPException, status
@@ -10,6 +11,8 @@ from sqlalchemy.orm import Session
 from models.cloud_account import CloudAccount
 from models.cloud_score import CloudScore
 from models.user import User
+from observability.instruments import operation_span
+from observability.metrics import SCORING_RUN_DURATION_SECONDS, SCORING_RUNS_TOTAL, provider_label
 from scoring.engine import RiskScoringEngine, ScoreRunResult
 from scoring.enums import ScoreType
 from services.audit_log import create_audit_log
@@ -26,6 +29,7 @@ def calculate_scores(
     cloud_account_id: uuid.UUID | None = None,
     provider: str | None = None,
 ) -> ScoreRunResult:
+    started = time.perf_counter()
     normalized_provider = _validate_scope(db, tenant_id=current_user.tenant_id, cloud_account_id=cloud_account_id, provider=provider)
     logger.info(
         "Scoring calculation started",
@@ -40,11 +44,12 @@ def calculate_scores(
         metadata={"cloud_account_id": str(cloud_account_id) if cloud_account_id else None, "provider": normalized_provider},
     )
     try:
-        result = RiskScoringEngine(db).calculate(
-            tenant_id=current_user.tenant_id,
-            cloud_account_id=cloud_account_id,
-            provider=normalized_provider,
-        )
+        with operation_span("scoring.calculate", provider=provider_label(normalized_provider), operation_name="score_calculation"):
+            result = RiskScoringEngine(db).calculate(
+                tenant_id=current_user.tenant_id,
+                cloud_account_id=cloud_account_id,
+                provider=normalized_provider,
+            )
         create_audit_log(
             db,
             tenant_id=current_user.tenant_id,
@@ -61,6 +66,9 @@ def calculate_scores(
         db.commit()
         for score in result.scores:
             db.refresh(score)
+        metric_provider = provider_label(normalized_provider)
+        SCORING_RUNS_TOTAL.labels(provider=metric_provider, status="completed").inc()
+        SCORING_RUN_DURATION_SECONDS.labels(provider=metric_provider, status="completed").observe(time.perf_counter() - started)
         logger.info(
             "Scoring calculation completed",
             extra={
@@ -83,6 +91,9 @@ def calculate_scores(
             metadata={"cloud_account_id": str(cloud_account_id) if cloud_account_id else None, "provider": normalized_provider, "error": str(exc)},
         )
         db.commit()
+        metric_provider = provider_label(normalized_provider)
+        SCORING_RUNS_TOTAL.labels(provider=metric_provider, status="failed").inc()
+        SCORING_RUN_DURATION_SECONDS.labels(provider=metric_provider, status="failed").observe(time.perf_counter() - started)
         logger.exception(
             "Scoring calculation failed",
             extra={"tenant_id": str(current_user.tenant_id), "cloud_account_id": str(cloud_account_id) if cloud_account_id else None, "provider": normalized_provider},

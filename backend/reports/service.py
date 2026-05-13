@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from models.report_artifact import ReportArtifact
 from models.user import User
+from observability.instruments import operation_span
+from observability.metrics import REPORT_GENERATION_DURATION_SECONDS, REPORT_GENERATION_FAILURES_TOTAL, REPORTS_GENERATED_TOTAL
 from reports.branding import merge_branding
 from reports.context_builder import ReportContextBuilder
 from reports.enums import ReportFormat, ReportStatus, ReportType
@@ -44,14 +46,21 @@ class ReportingService:
             },
         )
         try:
-            context = ReportContextBuilder(self.db).build(
-                tenant_id=current_user.tenant_id,
-                report_type=request.report_type,
-                provider=request.provider,
-                cloud_account_id=request.cloud_account_id,
-            )
-            html = self.html_renderer.render(report_type=request.report_type, context=context, branding=branding, title=title)
-            validate_report_html(title=title, html=html, report_type=request.report_type)
+            with operation_span(
+                "report.generate",
+                report_type=request.report_type.value,
+                report_format=request.report_format.value,
+                provider=request.provider or "all",
+                operation_name="report_generation",
+            ):
+                context = ReportContextBuilder(self.db).build(
+                    tenant_id=current_user.tenant_id,
+                    report_type=request.report_type,
+                    provider=request.provider,
+                    cloud_account_id=request.cloud_account_id,
+                )
+                html = self.html_renderer.render(report_type=request.report_type, context=context, branding=branding, title=title)
+                validate_report_html(title=title, html=html, report_type=request.report_type)
 
             report = ReportArtifact(
                 tenant_id=current_user.tenant_id,
@@ -101,9 +110,16 @@ class ReportingService:
             )
             self.db.commit()
             self.db.refresh(report)
+            duration = time.perf_counter() - started
+            REPORTS_GENERATED_TOTAL.labels(request.report_type.value, request.report_format.value, "generated").inc()
+            REPORT_GENERATION_DURATION_SECONDS.labels(request.report_type.value, request.report_format.value, "generated").observe(duration)
             return report
         except (ReportValidationError, ReportingError, ValueError) as exc:
             self.db.rollback()
+            duration = time.perf_counter() - started
+            REPORTS_GENERATED_TOTAL.labels(request.report_type.value, request.report_format.value, "failed").inc()
+            REPORT_GENERATION_DURATION_SECONDS.labels(request.report_type.value, request.report_format.value, "failed").observe(duration)
+            REPORT_GENERATION_FAILURES_TOTAL.labels(request.report_type.value, request.report_format.value).inc()
             create_audit_log(
                 self.db,
                 tenant_id=current_user.tenant_id,

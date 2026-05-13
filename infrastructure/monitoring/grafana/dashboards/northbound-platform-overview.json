@@ -1,0 +1,96 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum(rate(http_requests_total[5m]))", "legendFormat": "requests/sec"}],
+      "title": "HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}],
+      "title": "HTTP Latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "id": 3,
+      "targets": [{"expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[5m]))", "legendFormat": "5xx/sec"}],
+      "title": "HTTP Error Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+      "id": 4,
+      "targets": [{"expr": "sum(increase(inventory_scans_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Inventory Scans",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+      "id": 5,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(inventory_scan_duration_seconds_bucket[5m])) by (le, provider))", "legendFormat": "{{provider}} p95"}],
+      "title": "Inventory Scan Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+      "id": 6,
+      "targets": [{"expr": "sum(increase(findings_runs_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Findings Runs",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+      "id": 7,
+      "targets": [{"expr": "sum(increase(scoring_runs_total[24h])) by (provider,status)", "legendFormat": "{{provider}} {{status}}"}],
+      "title": "Score Calculations",
+      "type": "barchart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+      "id": 8,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(ai_analysis_duration_seconds_bucket[5m])) by (le, ai_provider))", "legendFormat": "{{ai_provider}} p95"}],
+      "title": "AI Analysis Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+      "id": 9,
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(report_generation_duration_seconds_bucket[5m])) by (le, report_type))", "legendFormat": "{{report_type}} p95"}],
+      "title": "Report Generation Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 24},
+      "id": 10,
+      "targets": [{"expr": "time() - process_start_time_seconds", "legendFormat": "backend uptime"}],
+      "title": "Backend Uptime",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["northbound", "platform", "observability"],
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Northbound Control Tower - Platform Overview",
+  "uid": "northbound-platform-overview",
+  "version": 1
+}
