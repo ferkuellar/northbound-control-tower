@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <style>
+    @page { size: A4; margin: 22mm; }
+    body { font-family: Arial, sans-serif; color: #17202a; background: #fff; line-height: 1.45; }
+    h1, h2, h3 { color: {{ branding.primary_color }}; margin: 0 0 12px; }
+    h1 { font-size: 32px; }
+    h2 { border-bottom: 2px solid #e5e7eb; font-size: 20px; padding-bottom: 8px; page-break-after: avoid; }
+    h3 { font-size: 15px; }
+    section { margin: 0 0 28px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; color: {{ branding.secondary_color }}; font-size: 12px; text-transform: uppercase; }
+    pre { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; white-space: pre-wrap; }
+    .cover { min-height: 680px; display: flex; flex-direction: column; justify-content: space-between; }
+    .brand { color: {{ branding.secondary_color }}; font-weight: 700; letter-spacing: 0.02em; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px; background: #fff; }
+    .metric { font-size: 28px; font-weight: 700; color: {{ branding.primary_color }}; }
+    .muted { color: #64748b; }
+    .footer { border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; padding-top: 12px; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <div>
+      <p class="brand">{{ branding.company_name }}</p>
+      <h1>Cover Page</h1>
+      <h2>{{ title }}</h2>
+      <p class="muted">Tenant: {{ context.tenant.name }} | Scope: {{ context.scope.provider }}</p>
+    </div>
+    <div class="footer">{{ branding.generated_by_text }} | {{ context.generated_at }}</div>
+  </section>
+
+  <section>
+    <h2>Executive Summary</h2>
+    {% if context.ai.available %}
+      <pre>{{ context.ai.output | tojson(indent=2) }}</pre>
+    {% else %}
+      <p>No completed AI analysis was available. This report uses deterministic scores, findings, and inventory summaries.</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Cloud Operational Score</h2>
+    <div class="grid">
+      {% for key, value in context.scores.items() %}
+      <div class="card">
+        <h3>{{ key | replace("_", " ") | title }}</h3>
+        <div class="metric">{{ value }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <h2>Findings Overview</h2>
+    <div class="grid">
+      <div class="card"><h3>Total Findings</h3><div class="metric">{{ context.findings_summary.total }}</div></div>
+      <div class="card"><h3>Public Resources</h3><div class="metric">{{ context.inventory_summary.public_resources }}</div></div>
+      <div class="card"><h3>Untagged Resources</h3><div class="metric">{{ context.inventory_summary.untagged_resources }}</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Top Risks</h2>
+    <table>
+      <thead><tr><th>Severity</th><th>Type</th><th>Provider</th><th>Finding</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        {% for finding in context.top_findings %}
+        <tr>
+          <td>{{ finding.severity }}</td>
+          <td>{{ finding.finding_type }}</td>
+          <td>{{ finding.provider }}</td>
+          <td>{{ finding.title }}</td>
+          <td>{{ finding.recommendation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section><h2>Governance Overview</h2><p>Missing tags and ownership indicators are summarized through deterministic findings and untagged resource counts.</p></section>
+  <section><h2>Observability Overview</h2><p>Observability gaps are summarized from deterministic findings and score evidence.</p></section>
+  <section><h2>FinOps Overview</h2><p>FinOps risks prioritize idle compute, unattached storage, and governance data quality issues.</p></section>
+  <section><h2>Resilience Overview</h2><p>Resilience is represented by deterministic score trends and operational findings.</p></section>
+
+  <section>
+    <h2>Remediation Priorities</h2>
+    <ol>
+      {% for finding in context.top_findings %}
+      <li><strong>{{ finding.title }}</strong>: {{ finding.recommendation }}</li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section>
+    <h2>Limitations</h2>
+    <ul>{% for limitation in context.limitations %}<li>{{ limitation }}</li>{% endfor %}</ul>
+  </section>
+
+  <section>
+    <h2>Appendix Summary</h2>
+    <p>Total resources: {{ context.inventory_summary.total_resources }}</p>
+    <p>{{ branding.footer_text }}</p>
+  </section>
+</body>
+</html>

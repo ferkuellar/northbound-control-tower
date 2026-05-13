@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from api.routes import ai, auth, cloud_accounts, findings, inventory, platform, resources, scores, status, tenants
+from api.routes import ai, auth, cloud_accounts, findings, inventory, platform, reports, resources, scores, status, tenants
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(status.router, tags=["status"])
@@ -12,4 +12,5 @@ api_router.include_router(resources.router, prefix="/resources", tags=["resource
 api_router.include_router(findings.router, prefix="/findings", tags=["findings"])
 api_router.include_router(scores.router, prefix="/scores", tags=["scores"])
 api_router.include_router(ai.router, prefix="/ai", tags=["ai"])
+api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(platform.router, prefix="/platform", tags=["platform"])
