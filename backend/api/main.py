@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.router import api_router
 from api.routes import health
+from cloud_shell.router import router as cloud_shell_router
 from core.config import settings
 from core.errors import register_exception_handlers
 from core.logging import configure_logging
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(health.router, tags=["health"])
+    app.include_router(cloud_shell_router)
     app.include_router(api_router)
     if settings.observability_enabled and settings.prometheus_metrics_enabled:
         app.add_route("/metrics", metrics_response, methods=["GET"])

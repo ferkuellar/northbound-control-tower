@@ -4,6 +4,7 @@ from models.ai_analysis import AIAnalysis
 from models.audit_log import AuditLog
 from models.cloud_account import CloudAccount
 from models.cloud_score import CloudScore
+from models.cloud_shell_audit import CloudShellCommandAudit
 from models.cost_optimization import CostOptimizationCase, CostRecommendation, CostServiceBreakdown
 from models.finding import Finding
 from models.inventory_scan import InventoryScan
@@ -18,6 +19,7 @@ __all__ = [
     "Base",
     "CloudAccount",
     "CloudScore",
+    "CloudShellCommandAudit",
     "CostOptimizationCase",
     "CostRecommendation",
     "CostServiceBreakdown",

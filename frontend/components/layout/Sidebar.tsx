@@ -9,6 +9,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 import type { User } from "@/lib/types";
 
@@ -37,6 +38,7 @@ const operations: NavItem[] = [
 const administration: NavItem[] = [
   { label: "Clients", href: "/admin/clients", icon: LayoutDashboard },
   { label: "Cloud Accounts", href: "#cloud-accounts", icon: Database },
+  { label: "Cloud Shell", href: "/cloud-shell", icon: Gauge },
   { label: "Reports", href: "#reports", icon: ClipboardList },
   { label: "Audit Logs", href: "#audit-logs", icon: ClipboardList },
   { label: "Settings", href: "#settings", icon: Gauge },
@@ -46,10 +48,12 @@ function NavGroup({
   title,
   items,
   openFindingsCount,
+  pathname,
 }: {
   title: string;
   items: NavItem[];
   openFindingsCount?: number;
+  pathname: string;
 }) {
   return (
     <div className="space-y-1">
@@ -57,12 +61,13 @@ function NavGroup({
       <div className="space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
+          const isActive = item.href.startsWith("/") ? pathname === item.href : item.active;
           return (
             <a
               key={item.href}
               href={item.href}
               className={`flex min-h-9 items-center gap-2 border-l-2 px-3 py-2 text-xs outline-none transition focus-visible:ring-2 focus-visible:ring-northbound-white80 ${
-                item.active
+                isActive
                   ? "border-[#1D9E75] bg-northbound-panel text-northbound-text"
                   : "border-transparent text-northbound-textMuted hover:bg-northbound-panel hover:text-northbound-textSecondary"
               }`}
@@ -83,6 +88,8 @@ function NavGroup({
 }
 
 export function Sidebar({ user, openFindingsCount }: SidebarProps) {
+  const pathname = usePathname();
+
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-northbound-border bg-northbound-bg md:min-h-screen md:w-60 md:border-b-0 md:border-r">
       <div className="border-b border-northbound-border px-4 py-4">
@@ -98,8 +105,8 @@ export function Sidebar({ user, openFindingsCount }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-5 px-0 py-4" aria-label="Dashboard navigation">
-        <NavGroup title="Operations" items={operations} openFindingsCount={openFindingsCount} />
-        <NavGroup title="Administration" items={administration} />
+        <NavGroup title="Operations" items={operations} openFindingsCount={openFindingsCount} pathname={pathname} />
+        <NavGroup title="Administration" items={administration} pathname={pathname} />
       </nav>
 
       <div className="border-t border-northbound-border px-4 py-4">

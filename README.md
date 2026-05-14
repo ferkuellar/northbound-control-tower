@@ -111,7 +111,17 @@ Feeds normalized findings and risk scores into a structured AI context layer. Pr
 
 The pipeline flows from cloud account credentials through collection, normalization, and rule-based analysis into a deterministic scoring layer. Structured findings then feed an AI context builder that drives Claude, OpenAI, or DeepSeek to generate executive and technical reports surfaced in the Next.js dashboard.
 
-For a full breakdown of each component, data models, and design decisions, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For a full breakdown of each component, data models, and design decisions, see:
+
+- [Admin Client](./docs/architecture/admin-client-experience.md).
+- [Ai Analysis](./docs/architecture/ai-analysis-layer.md)
+- [Executive Dashboard](./docs/architecture/executive-dashboard.md)
+- [Findings Engine](./docs/architecture/findings-engine.md)
+- [Internal Observability](./docs/architecture/internal-observability.md)
+- [Reporting Engine](./docs/architecture/reporting-engine.md)
+- [Resource Normalization Model](./docs/architecture/resource-normalization-model.md)
+- [Risk Scoring Engine](./docs/architecture/risk-scoring-engine.md)
+- [Saas Hardening](./docs/architecture/saas-hardening.md)
 
 ---
 
@@ -192,10 +202,10 @@ make clean          # Stop + remove volumes
 | Document | Purpose | Audience |
 |---|---|---|
 | **README** *(this file)* | Platform overview, capabilities, architecture | All |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Component design, data model, technical decisions | Engineers, Architects |
-| [QUICKSTART.md](./QUICKSTART.md) | Run the stack locally in under 30 minutes | Engineers |
-| [API_REFERENCE.md](./API_REFERENCE.md) | Full endpoint reference, request/response schemas | Developers, Integrators |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Branch conventions, how to add collectors and findings | Contributors |
+| [ARCHITECTURE.md](./docs/files/ARCHITECTURE.md) | Component design, data model, technical decisions | Engineers, Architects |
+| [QUICKSTART.md](./docs/files/QUICKSTART.md) | Run the stack locally in under 30 minutes | Engineers |
+| [API_REFERENCE.md](./docs/files/API_REFERENCE.md) | Full endpoint reference, request/response schemas | Developers, Integrators |
+| [CONTRIBUTING.md](./docs/files/CONTRIBUTING.md) | Branch conventions, how to add collectors and findings | Contributors |
 
 ---
 
