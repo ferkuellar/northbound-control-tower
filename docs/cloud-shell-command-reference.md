@@ -19,6 +19,10 @@
 | `nb cost estimate <request_id>` | Run Infracost estimate for the Terraform workspace | OPERATOR | MEDIUM | Yes | `nb cost estimate REQ-1001` |
 | `nb risk summary <request_id>` | Generate JSON and Markdown risk summary | OPERATOR | MEDIUM | Yes | `nb risk summary REQ-1001` |
 | `nb gates evaluate <request_id>` | Evaluate policy gates and set gate decision | OPERATOR | HIGH | Yes | `nb gates evaluate REQ-1001` |
+| `nb approvals list` | List provisioning requests waiting for approval | APPROVER | LOW | Yes | `nb approvals list` |
+| `nb approvals show <request_id>` | Show approval detail for a request | APPROVER | LOW | Yes | `nb approvals show REQ-1001` |
+| `nb approve <request_id> --note "..."` | Approve a request after review | APPROVER | HIGH | Yes | `nb approve REQ-1001 --note "Reviewed security, cost and gates"` |
+| `nb reject <request_id> --note "..."` | Reject a request with reason | APPROVER | HIGH | Yes | `nb reject REQ-1001 --note "Cost too high"` |
 | `nb terraform apply <request_id>` | Future controlled apply | OPERATOR | CRITICAL | No | `nb terraform apply REQ-1001` |
 | `nb terraform destroy <request_id>` | Destructive Terraform command | N/A | CRITICAL | Blocked | `nb terraform destroy REQ-1001` |
 | `nb approve <request_id>` | Future approval command | APPROVER | HIGH | No | `nb approve REQ-1001` |
@@ -45,7 +49,9 @@ TERRAFORM_VALIDATE_SUCCEEDED
 
 ```text
 Command recognized but disabled in this phase.
-Reason: Approval and apply require completed security gates, cost review and explicit approval workflow.
+
+Reason:
+Apply execution belongs to Phase F and requires an approved request, immutable plan artifact and controlled runner.
 ```
 
 ## Terraform Destroy Blocked Output
@@ -62,5 +68,8 @@ nb security scan REQ-1001
 nb cost estimate REQ-1001
 nb risk summary REQ-1001
 nb gates evaluate REQ-1001
+nb approvals list
+nb approvals show REQ-1001
+nb approve REQ-1001 --note "Reviewed security, cost and gates"
 nb evidence show REQ-1001
 ```

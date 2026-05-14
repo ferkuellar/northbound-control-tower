@@ -26,6 +26,8 @@ BLOCKED_PHRASES = {
     "aws iam delete-role",
 }
 
+GROUP_ONLY_COMMANDS = {"approve", "reject", "validate"}
+
 
 class CommandParser:
     """Parses only Northbound controlled commands."""
@@ -60,7 +62,7 @@ class CommandParser:
         group = tokens[1].lower()
         action: str | None = None
         args_start = 2
-        if len(tokens) >= 3 and not tokens[2].startswith("--"):
+        if group not in GROUP_ONLY_COMMANDS and len(tokens) >= 3 and not tokens[2].startswith("--"):
             action = tokens[2].lower()
             args_start = 3
 

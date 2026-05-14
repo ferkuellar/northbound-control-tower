@@ -11,6 +11,10 @@ const commands = [
   ["nb cost estimate <request_id>", "Estimate monthly cost"],
   ["nb risk summary <request_id>", "Generate risk packet"],
   ["nb gates evaluate <request_id>", "Decide readiness"],
+  ["nb approvals list", "List pending approvals"],
+  ["nb approvals show <request_id>", "Review approval detail"],
+  ['nb approve <request_id> --note "..."', "Approve reviewed request"],
+  ['nb reject <request_id> --note "..."', "Reject request with reason"],
 ];
 
 export function CommandHelpPanel() {
@@ -21,6 +25,7 @@ export function CommandHelpPanel() {
       <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Security Gates: Enabled</span>
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Cost Estimation: Enabled</span>
+        <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Approval Workflow: Enabled</span>
         <span className="rounded border border-[#E8B84E]/40 px-2 py-1 text-[#F3D48A]">Apply: Disabled</span>
         <span className="rounded border border-[#A32D2D]/40 px-2 py-1 text-[#F2A0A0]">Destroy: Blocked</span>
       </div>

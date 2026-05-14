@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from cloud_shell.command_registry import CommandDefinition, CommandRegistry
 from cloud_shell.enums import CloudShellRiskLevel
+from cloud_shell.services.approval_shell_service import ApprovalsListCommand, ApprovalsShowCommand, ApproveCommand, RejectCommand
 from cloud_shell.services.disabled_service import DisabledFutureCommand
 from cloud_shell.services.evidence_shell_service import EvidenceShowCommand
 from cloud_shell.services.findings_shell_service import FindingsListCommand, FindingsShowCommand
@@ -197,6 +198,50 @@ def build_default_registry() -> CommandRegistry:
         ),
         CommandDefinition(
             "nb",
+            "approvals",
+            "list",
+            "List provisioning requests waiting for approval",
+            "APPROVER",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            ApprovalsListCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "approvals",
+            "show",
+            "Show approval detail for a provisioning request",
+            "APPROVER",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            ApprovalsShowCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "approve",
+            None,
+            "Approve a provisioning request",
+            "APPROVER",
+            CloudShellRiskLevel.HIGH,
+            True,
+            True,
+            ApproveCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "reject",
+            None,
+            "Reject a provisioning request",
+            "APPROVER",
+            CloudShellRiskLevel.HIGH,
+            True,
+            True,
+            RejectCommand(),
+        ),
+        CommandDefinition(
+            "nb",
             "terraform",
             "apply",
             "Future controlled Terraform apply",
@@ -216,17 +261,6 @@ def build_default_registry() -> CommandRegistry:
             True,
             True,
             TerraformDestroyBlockedCommand(),
-        ),
-        CommandDefinition(
-            "nb",
-            "approve",
-            None,
-            "Future approval command",
-            "APPROVER",
-            CloudShellRiskLevel.HIGH,
-            True,
-            False,
-            DisabledFutureCommand(),
         ),
         CommandDefinition(
             "nb",

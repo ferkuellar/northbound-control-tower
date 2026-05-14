@@ -96,7 +96,9 @@ class TerraformApplyDisabledCommand:
             ShellResponseBuilder(parsed.command_name)
             .with_status("not_implemented")
             .line("Command recognized but disabled in this phase.")
-            .line("Reason: Approval and apply require completed security gates, cost review and explicit approval workflow.")
+            .line("")
+            .line("Reason:")
+            .line("Apply execution belongs to Phase F and requires an approved request, immutable plan artifact and controlled runner.")
             .build()
         )
 
