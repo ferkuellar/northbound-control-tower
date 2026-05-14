@@ -227,7 +227,7 @@ Phase boundaries are intentional. New capabilities are added only after the curr
 ## License
 
 Proprietary. All rights reserved.
-© Northbound — NorthFinOps / NOVEX
+© Northbound — NorthFinOps 
 
 For licensing inquiries, contact the maintainers through the repository.
 
