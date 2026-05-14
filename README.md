@@ -63,6 +63,16 @@ Full multi-tenant architecture with per-client cloud account isolation, scoring,
 
 ---
 
+### Northbound Cloud Shell
+
+Controlled provisioning console for investigating findings, creating remediation requests, and running safe Terraform validate/plan workflows without exposing an unrestricted operating-system shell.
+
+<img src="docs/screenshots/shell-terminal.png" alt="Northbound Cloud Shell — controlled provisioning console with allowlisted nb commands and Terraform safety boundary" width="100%">
+
+> **Controlled command shell** — `nb` commands only, audited execution, Terraform validate/plan support, `apply` disabled, and `destroy` blocked by design.
+
+---
+
 ## What This Is Not (Phase 0 Scope)
 
 Phase 0 establishes a deliberate, production-grade foundation. The following are **out of scope by design** and will be addressed in subsequent phases:
