@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from cloud_shell.responses import ShellResponseBuilder
 from cloud_shell.schemas import ParsedCommand, ShellResponse, ShellUserContext
+from provisioning.terraform_apply_service import TerraformApplyService
 from provisioning.terraform_runner import TERRAFORM_NOT_FOUND, TerraformRunner
 from provisioning.service import ProvisioningRequestService
 
@@ -90,17 +91,94 @@ class TerraformPlanCommand:
         return builder.meta("related_request_id", request.request_number).meta("plan_summary", summary or {}).build()
 
 
-class TerraformApplyDisabledCommand:
+class TerraformApplyCommand:
     def execute(self, db: Session, parsed: ParsedCommand, user_context: ShellUserContext) -> ShellResponse:
+        if not parsed.args:
+            return ShellResponseBuilder(parsed.command_name).with_status("error").line("Usage: nb terraform apply <request_id>").build()
+        service = ProvisioningRequestService(db)
+        request = service.get_by_number_or_id(tenant_id=uuid.UUID(str(user_context.tenant_id)), identifier=parsed.args[0])
+        if request is None:
+            return ShellResponseBuilder(parsed.command_name).with_status("error").line(f"Provisioning request not found: {parsed.args[0]}").build()
+
+        result = TerraformApplyService(db).apply(request, created_by_user_id=user_context.user_id)
+        if not result.precheck.passed:
+            reason = result.precheck.reasons[0] if result.precheck.reasons else "Apply pre-check failed."
+            return (
+                ShellResponseBuilder(parsed.command_name)
+                .with_status("blocked")
+                .line(f"Apply blocked for {request.request_number}.")
+                .line("")
+                .line("Reason:")
+                .line(reason)
+                .line("")
+                .line("Current status:")
+                .line(request.status)
+                .line("")
+                .line("No infrastructure changes were executed.")
+                .meta("related_request_id", request.request_number)
+                .meta("precheck", result.precheck.payload())
+                .build()
+            )
+
+        if not result.success:
+            return (
+                ShellResponseBuilder(parsed.command_name)
+                .with_status("error")
+                .line(f"Terraform apply failed for {request.request_number}.")
+                .line("")
+                .line("Exit code:")
+                .line(str(result.exit_code))
+                .line("")
+                .line("Status:")
+                .line(request.status)
+                .line("")
+                .line("Evidence:")
+                .line("- apply.log")
+                .line("- apply-metadata.json")
+                .line("")
+                .line("No post-validation was executed.")
+                .meta("related_request_id", request.request_number)
+                .build()
+            )
+
         return (
             ShellResponseBuilder(parsed.command_name)
-            .with_status("not_implemented")
-            .line("Command recognized but disabled in this phase.")
+            .with_status("success")
+            .line(f"Controlled Terraform apply started for {request.request_number}.")
             .line("")
-            .line("Reason:")
-            .line("Apply execution belongs to Phase F and requires an approved request, immutable plan artifact and controlled runner.")
+            .line("Pre-checks:")
+            .line("- Request approved: OK")
+            .line("- Approval valid: OK")
+            .line("- Plan artifact exists: OK")
+            .line("- Plan checksum verified: OK")
+            .line("- Gates verified: OK")
+            .line("- Destructive changes: none")
+            .line("- Execution lock acquired: OK")
+            .line("")
+            .line("Running:")
+            .line("terraform apply -input=false -no-color plan.out")
+            .line("")
+            .line("Apply completed successfully.")
+            .line("")
+            .line("Status:")
+            .line(request.status)
+            .line("")
+            .line("Artifacts:")
+            .line("- apply.log")
+            .line("- apply-metadata.json")
+            .line("- outputs.json")
+            .line("")
+            .line("Next:")
+            .line(f"nb outputs show {request.request_number}")
+            .line("")
+            .line("Upcoming phase:")
+            .line("Phase G - Post-Remediation Validation")
+            .meta("related_request_id", request.request_number)
             .build()
         )
+
+
+TerraformApplyDisabledCommand = TerraformApplyCommand
 
 
 class TerraformDestroyBlockedCommand:

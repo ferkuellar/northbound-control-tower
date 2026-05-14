@@ -209,7 +209,8 @@ def test_cloud_shell_terraform_commands(monkeypatch, tmp_path: Path) -> None:
         assert validate.status == "success"
         assert plan.status == "success"
         assert "TERRAFORM_PLAN_JSON" in evidence.output
-        assert apply.status == "not_implemented"
+        assert apply.status == "blocked"
+        assert "No infrastructure changes were executed." in apply.output
         assert destroy.status == "blocked"
     finally:
         db.close()

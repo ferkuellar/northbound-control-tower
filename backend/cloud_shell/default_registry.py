@@ -10,13 +10,14 @@ from cloud_shell.services.fix_shell_service import FixPlanCommand, FixSuggestCom
 from cloud_shell.services.cost_shell_service import CostEstimateCommand
 from cloud_shell.services.gates_shell_service import GatesEvaluateCommand
 from cloud_shell.services.help_service import HelpCommand
+from cloud_shell.services.outputs_shell_service import OutputsShowCommand
 from cloud_shell.services.risk_shell_service import RiskSummaryCommand
 from cloud_shell.services.request_shell_service import RequestsListCommand, RequestsShowCommand
 from cloud_shell.services.security_shell_service import SecurityScanCommand
 from cloud_shell.services.status_service import StatusCommand
 from cloud_shell.services.templates_shell_service import TemplatesListCommand, TemplatesShowCommand
 from cloud_shell.services.terraform_shell_service import (
-    TerraformApplyDisabledCommand,
+    TerraformApplyCommand,
     TerraformDestroyBlockedCommand,
     TerraformPlanCommand,
     TerraformValidateCommand,
@@ -244,12 +245,23 @@ def build_default_registry() -> CommandRegistry:
             "nb",
             "terraform",
             "apply",
-            "Future controlled Terraform apply",
+            "Controlled Terraform apply",
             "OPERATOR",
             CloudShellRiskLevel.CRITICAL,
             True,
+            True,
+            TerraformApplyCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "outputs",
+            "show",
+            "Show Terraform outputs for an applied request",
+            "VIEWER",
+            CloudShellRiskLevel.LOW,
             False,
-            TerraformApplyDisabledCommand(),
+            True,
+            OutputsShowCommand(),
         ),
         CommandDefinition(
             "nb",

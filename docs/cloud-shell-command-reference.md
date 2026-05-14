@@ -23,9 +23,9 @@
 | `nb approvals show <request_id>` | Show approval detail for a request | APPROVER | LOW | Yes | `nb approvals show REQ-1001` |
 | `nb approve <request_id> --note "..."` | Approve a request after review | APPROVER | HIGH | Yes | `nb approve REQ-1001 --note "Reviewed security, cost and gates"` |
 | `nb reject <request_id> --note "..."` | Reject a request with reason | APPROVER | HIGH | Yes | `nb reject REQ-1001 --note "Cost too high"` |
-| `nb terraform apply <request_id>` | Future controlled apply | OPERATOR | CRITICAL | No | `nb terraform apply REQ-1001` |
+| `nb terraform apply <request_id>` | Apply the approved immutable Terraform plan | OPERATOR | CRITICAL | Yes | `nb terraform apply REQ-1001` |
+| `nb outputs show <request_id>` | Show captured Terraform outputs with sensitive values redacted | VIEWER | LOW | Yes | `nb outputs show REQ-1001` |
 | `nb terraform destroy <request_id>` | Destructive Terraform command | N/A | CRITICAL | Blocked | `nb terraform destroy REQ-1001` |
-| `nb approve <request_id>` | Future approval command | APPROVER | HIGH | No | `nb approve REQ-1001` |
 | `nb validate <finding_id>` | Future post-remediation validation | OPERATOR | MEDIUM | No | `nb validate FIND-001` |
 
 ## Terraform Validate Output
@@ -45,13 +45,15 @@ Status:
 TERRAFORM_VALIDATE_SUCCEEDED
 ```
 
-## Terraform Apply Disabled Output
+## Terraform Apply Blocked Output
 
 ```text
-Command recognized but disabled in this phase.
+Apply blocked for REQ-1001.
 
 Reason:
-Apply execution belongs to Phase F and requires an approved request, immutable plan artifact and controlled runner.
+Request status must be APPROVED, current status is READY_FOR_APPROVAL
+
+No infrastructure changes were executed.
 ```
 
 ## Terraform Destroy Blocked Output
@@ -71,5 +73,7 @@ nb gates evaluate REQ-1001
 nb approvals list
 nb approvals show REQ-1001
 nb approve REQ-1001 --note "Reviewed security, cost and gates"
+nb terraform apply REQ-1001
+nb outputs show REQ-1001
 nb evidence show REQ-1001
 ```

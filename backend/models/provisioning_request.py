@@ -98,3 +98,19 @@ class ProvisioningApproval(Base, TimestampMixin):
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     request: Mapped["ProvisioningRequest"] = relationship()
+
+
+class ProvisioningExecutionLock(Base, TimestampMixin):
+    __tablename__ = "provisioning_execution_locks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("provisioning_requests.id"), nullable=False, index=True)
+    lock_token: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    locked_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    locked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    request: Mapped["ProvisioningRequest"] = relationship()

@@ -13,15 +13,15 @@ def test_phase_d_commands_parse() -> None:
     assert parser.parse("nb gates evaluate REQ-1001").group == "gates"
 
 
-def test_terraform_apply_remains_disabled() -> None:
+def test_terraform_apply_requires_request_id() -> None:
     response = TerraformApplyDisabledCommand().execute(
         None,
-        ParsedCommand(namespace="nb", group="terraform", action="apply", args=["REQ-1001"]),
+        ParsedCommand(namespace="nb", group="terraform", action="apply", args=[]),
         ShellUserContext(user_id=None, tenant_id=None, role="ADMIN"),
     )
 
-    assert response.status == "not_implemented"
-    assert "Command recognized but disabled in this phase." in response.output
+    assert response.status == "error"
+    assert "Usage: nb terraform apply <request_id>" in response.output
 
 
 def test_terraform_destroy_remains_blocked() -> None:

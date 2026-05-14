@@ -15,6 +15,8 @@ const commands = [
   ["nb approvals show <request_id>", "Review approval detail"],
   ['nb approve <request_id> --note "..."', "Approve reviewed request"],
   ['nb reject <request_id> --note "..."', "Reject request with reason"],
+  ["nb terraform apply <request_id>", "Apply approved plan"],
+  ["nb outputs show <request_id>", "Show Terraform outputs"],
 ];
 
 export function CommandHelpPanel() {
@@ -26,7 +28,7 @@ export function CommandHelpPanel() {
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Security Gates: Enabled</span>
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Cost Estimation: Enabled</span>
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Approval Workflow: Enabled</span>
-        <span className="rounded border border-[#E8B84E]/40 px-2 py-1 text-[#F3D48A]">Apply: Disabled</span>
+        <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Controlled Apply: Enabled</span>
         <span className="rounded border border-[#A32D2D]/40 px-2 py-1 text-[#F2A0A0]">Destroy: Blocked</span>
       </div>
       <div className="mt-4 space-y-2">

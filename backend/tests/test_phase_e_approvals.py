@@ -213,8 +213,9 @@ def test_cloud_shell_approval_commands_and_apply_destroy_guards() -> None:
         assert "Approval Detail" in show_response.output
         assert approve_response.status == "success"
         assert "APPROVED" in approve_response.output
-        assert apply_response.status == "not_implemented"
-        assert "Phase F" in apply_response.output
+        assert apply_response.status == "blocked"
+        assert "Apply blocked" in apply_response.output
+        assert "No infrastructure changes were executed." in apply_response.output
         assert destroy_response.status == "blocked"
     finally:
         db.close()

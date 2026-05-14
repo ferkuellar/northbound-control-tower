@@ -13,6 +13,12 @@ GATES_PASSED
 READY_FOR_APPROVAL
 PENDING_APPROVAL
 APPROVED
+APPLY_PRECHECK_RUNNING
+APPLY_READY
+APPLY_RUNNING
+APPLY_SUCCEEDED
+OUTPUTS_CAPTURE_RUNNING
+OUTPUTS_CAPTURED
 REJECTED
 ```
 
@@ -28,20 +34,23 @@ GATES_FAILED
 GATES_BLOCKED
 CANCELLED
 APPROVAL_EXPIRED
+APPLY_PRECHECK_FAILED
+APPLY_FAILED
+OUTPUTS_CAPTURE_FAILED
 ```
 
 ## Future Lifecycle
 
-Phase F and Phase G should add:
+Phase G should add:
 
 ```text
-APPLY_RUNNING
-APPLY_SUCCEEDED
-APPLY_FAILED
 POST_VALIDATION_RUNNING
 RESOLVED
+PARTIALLY_RESOLVED
+STILL_OPEN
+VALIDATION_FAILED_POST_APPLY
 ```
 
 ## Notes
 
-Approval is a change-control decision. It does not apply infrastructure. Controlled apply must validate the approved plan checksum before execution.
+Approval is a change-control decision. Controlled apply validates approved checksums and executes only the saved `plan.out`. Post-remediation validation remains future work.
