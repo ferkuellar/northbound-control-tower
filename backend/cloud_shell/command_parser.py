@@ -26,7 +26,7 @@ BLOCKED_PHRASES = {
     "aws iam delete-role",
 }
 
-GROUP_ONLY_COMMANDS = {"approve", "reject", "validate"}
+GROUP_ONLY_COMMANDS = {"approve", "reject"}
 
 
 class CommandParser:

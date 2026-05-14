@@ -25,8 +25,11 @@
 | `nb reject <request_id> --note "..."` | Reject a request with reason | APPROVER | HIGH | Yes | `nb reject REQ-1001 --note "Cost too high"` |
 | `nb terraform apply <request_id>` | Apply the approved immutable Terraform plan | OPERATOR | CRITICAL | Yes | `nb terraform apply REQ-1001` |
 | `nb outputs show <request_id>` | Show captured Terraform outputs with sensitive values redacted | VIEWER | LOW | Yes | `nb outputs show REQ-1001` |
+| `nb validate request <request_id>` | Run post-remediation validation after apply | OPERATOR | HIGH | Yes | `nb validate request REQ-1001` |
+| `nb validate finding <finding_id>` | Run post-remediation validation for the applied request tied to a finding | OPERATOR | HIGH | Yes | `nb validate finding FIND-001` |
+| `nb rescan account <account_id>` | Run read-only collector rescan for a cloud account | OPERATOR | MEDIUM | Yes | `nb rescan account AWS-PROD-001` |
+| `nb remediation report <request_id>` | Show final remediation report | VIEWER | LOW | Yes | `nb remediation report REQ-1001` |
 | `nb terraform destroy <request_id>` | Destructive Terraform command | N/A | CRITICAL | Blocked | `nb terraform destroy REQ-1001` |
-| `nb validate <finding_id>` | Future post-remediation validation | OPERATOR | MEDIUM | No | `nb validate FIND-001` |
 
 ## Terraform Validate Output
 
@@ -75,5 +78,7 @@ nb approvals show REQ-1001
 nb approve REQ-1001 --note "Reviewed security, cost and gates"
 nb terraform apply REQ-1001
 nb outputs show REQ-1001
+nb validate request REQ-1001
+nb remediation report REQ-1001
 nb evidence show REQ-1001
 ```

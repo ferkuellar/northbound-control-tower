@@ -17,6 +17,10 @@ const commands = [
   ['nb reject <request_id> --note "..."', "Reject request with reason"],
   ["nb terraform apply <request_id>", "Apply approved plan"],
   ["nb outputs show <request_id>", "Show Terraform outputs"],
+  ["nb validate request <request_id>", "Validate applied remediation"],
+  ["nb validate finding <finding_id>", "Validate by original finding"],
+  ["nb rescan account <account_id>", "Run read-only collector rescan"],
+  ["nb remediation report <request_id>", "Show final report"],
 ];
 
 export function CommandHelpPanel() {
@@ -29,6 +33,7 @@ export function CommandHelpPanel() {
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Cost Estimation: Enabled</span>
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Approval Workflow: Enabled</span>
         <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Controlled Apply: Enabled</span>
+        <span className="rounded border border-[#4CA883]/40 px-2 py-1 text-[#9FE1CB]">Post-Validation: Enabled</span>
         <span className="rounded border border-[#A32D2D]/40 px-2 py-1 text-[#F2A0A0]">Destroy: Blocked</span>
       </div>
       <div className="mt-4 space-y-2">

@@ -20,7 +20,15 @@ class FindingSeverity(StrEnum):
 class FindingStatus(StrEnum):
     OPEN = "open"
     ACKNOWLEDGED = "acknowledged"
+    REMEDIATION_PLANNED = "remediation_planned"
+    PENDING_APPROVAL = "pending_approval"
+    REMEDIATION_RUNNING = "remediation_running"
+    VALIDATING = "validating"
     RESOLVED = "resolved"
+    PARTIALLY_RESOLVED = "partially_resolved"
+    STILL_OPEN = "still_open"
+    VALIDATION_FAILED = "validation_failed"
+    RISK_ACCEPTED = "risk_accepted"
     FALSE_POSITIVE = "false_positive"
 
 

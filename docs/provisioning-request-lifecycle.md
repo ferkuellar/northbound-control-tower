@@ -19,6 +19,14 @@ APPLY_RUNNING
 APPLY_SUCCEEDED
 OUTPUTS_CAPTURE_RUNNING
 OUTPUTS_CAPTURED
+POST_VALIDATION_PENDING
+POST_VALIDATION_RUNNING
+POST_VALIDATION_SUCCEEDED
+REMEDIATION_RESOLVED
+REMEDIATION_PARTIALLY_RESOLVED
+REMEDIATION_STILL_OPEN
+FINAL_REPORT_GENERATING
+FINAL_REPORT_READY
 REJECTED
 ```
 
@@ -37,20 +45,21 @@ APPROVAL_EXPIRED
 APPLY_PRECHECK_FAILED
 APPLY_FAILED
 OUTPUTS_CAPTURE_FAILED
+POST_VALIDATION_FAILED
+REMEDIATION_VALIDATION_FAILED
+FINAL_REPORT_FAILED
 ```
 
 ## Future Lifecycle
 
-Phase G should add:
+Phase H should add reporting package states if needed. Future post-validation engine states remain:
 
 ```text
-POST_VALIDATION_RUNNING
-RESOLVED
-PARTIALLY_RESOLVED
-STILL_OPEN
-VALIDATION_FAILED_POST_APPLY
+EVIDENCE_PACKAGE_GENERATING
+EVIDENCE_PACKAGE_READY
+EXECUTIVE_REPORT_READY
 ```
 
 ## Notes
 
-Approval is a change-control decision. Controlled apply validates approved checksums and executes only the saved `plan.out`. Post-remediation validation remains future work.
+Approval is a change-control decision. Controlled apply validates approved checksums and executes only the saved `plan.out`. Post-remediation validation is the only phase allowed to mark remediation outcomes after a read-only rescan and findings diff.
