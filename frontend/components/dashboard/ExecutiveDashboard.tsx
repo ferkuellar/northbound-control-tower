@@ -32,9 +32,9 @@ function numberCard(label: string, value: number | string, detail?: string) {
   return (
     <Card key={label}>
       <CardContent>
-        <p className="text-sm font-medium text-steel">{label}</p>
-        <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
-        {detail ? <p className="mt-2 text-sm text-steel">{detail}</p> : null}
+        <p className="text-sm font-medium text-northbound-white80">{label}</p>
+        <p className="mt-2 text-3xl font-semibold text-northbound-white100">{value}</p>
+        {detail ? <p className="mt-2 text-sm text-northbound-white60">{detail}</p> : null}
       </CardContent>
     </Card>
   );
@@ -42,9 +42,9 @@ function numberCard(label: string, value: number | string, detail?: string) {
 
 function inlineStat(label: string, value: number | string) {
   return (
-    <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-4">
-      <p className="text-sm font-medium text-steel">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
+    <div key={label} className="rounded-md border border-northbound-black80 bg-northbound-black100/45 p-4">
+      <p className="text-sm font-medium text-northbound-white80">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-northbound-white100">{value}</p>
     </div>
   );
 }
@@ -54,7 +54,7 @@ function SummaryList({ title, items }: { title: string; items: Record<string, nu
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
+        <h3 className="text-base font-semibold text-northbound-white100">{title}</h3>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
@@ -63,8 +63,8 @@ function SummaryList({ title, items }: { title: string; items: Record<string, nu
           <div className="space-y-3">
             {entries.slice(0, 8).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between gap-4">
-                <span className="text-sm text-steel">{labelize(key)}</span>
-                <span className="rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-ink">{value}</span>
+                <span className="text-sm text-northbound-white60">{labelize(key)}</span>
+                <span className="rounded-md border border-northbound-black80 bg-northbound-black100 px-2 py-1 text-sm font-semibold text-northbound-white100">{value}</span>
               </div>
             ))}
           </div>
@@ -119,11 +119,11 @@ export function ExecutiveDashboard() {
 
   if (state.status === "loading") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-surface px-4">
+      <main className="flex min-h-screen items-center justify-center bg-northbound-black100 px-4">
         <Card className="w-full max-w-md">
           <CardContent>
-            <p className="text-sm font-semibold text-ink">Loading executive dashboard</p>
-            <p className="mt-2 text-sm text-steel">Fetching scores, findings, and inventory from the backend.</p>
+            <p className="text-sm font-semibold text-northbound-white100">Loading executive dashboard</p>
+            <p className="mt-2 text-sm text-northbound-white60">Fetching scores, findings, and inventory from the backend.</p>
           </CardContent>
         </Card>
       </main>
@@ -132,11 +132,11 @@ export function ExecutiveDashboard() {
 
   if (state.status === "error") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-surface px-4">
+      <main className="flex min-h-screen items-center justify-center bg-northbound-black100 px-4">
         <Card className="w-full max-w-lg">
           <CardContent>
             <p className="text-sm font-semibold text-risk">Dashboard unavailable</p>
-            <p className="mt-2 text-sm text-steel">{state.message}</p>
+            <p className="mt-2 text-sm text-northbound-white60">{state.message}</p>
           </CardContent>
         </Card>
       </main>
@@ -155,8 +155,8 @@ export function ExecutiveDashboard() {
       <div className="space-y-6">
         <section id="overview" className="space-y-4">
           <div>
-            <h2 className="text-lg font-semibold text-ink">Overview</h2>
-            <p className="text-sm text-steel">Executive scorecards from deterministic backend scores.</p>
+            <h2 className="text-lg font-semibold text-northbound-white100">Overview</h2>
+            <p className="text-sm text-northbound-white60">Executive scorecards from deterministic backend scores.</p>
           </div>
           <ScoreCards scores={data.scoresLatest.items} summary={data.scoreSummary} />
         </section>
@@ -172,7 +172,7 @@ export function ExecutiveDashboard() {
         <section className="grid gap-4 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-ink">Inventory Summary</h2>
+              <h2 className="text-lg font-semibold text-northbound-white100">Inventory Summary</h2>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -184,7 +184,7 @@ export function ExecutiveDashboard() {
           </Card>
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-ink">Risk Summary</h2>
+              <h2 className="text-lg font-semibold text-northbound-white100">Risk Summary</h2>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -199,7 +199,7 @@ export function ExecutiveDashboard() {
         </section>
 
         <section id="scores" className="space-y-4">
-          <h2 className="text-lg font-semibold text-ink">Scores</h2>
+          <h2 className="text-lg font-semibold text-northbound-white100">Scores</h2>
           <ScoreCharts
             summary={data.scoreSummary}
             history={data.scoreHistory.items}
@@ -224,8 +224,8 @@ export function ExecutiveDashboard() {
         <section id="risks" className="space-y-4">
           <Card>
             <CardHeader>
-              <h2 className="text-lg font-semibold text-ink">Risk Prioritization</h2>
-              <p className="text-sm text-steel">Top deterministic findings ordered by severity and recency.</p>
+              <h2 className="text-lg font-semibold text-northbound-white100">Risk Prioritization</h2>
+              <p className="text-sm text-northbound-white60">Top deterministic findings ordered by severity and recency.</p>
             </CardHeader>
             <CardContent>
               {riskFindings.length === 0 ? (
@@ -233,7 +233,7 @@ export function ExecutiveDashboard() {
               ) : (
                 <div className="space-y-3">
                   {riskFindings.map((finding) => (
-                    <div key={finding.id} className="rounded-md border border-slate-200 p-4">
+                    <div key={finding.id} className="rounded-md border border-northbound-black80 bg-northbound-black100/45 p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge tone={finding.severity === "critical" || finding.severity === "high" ? "danger" : "warning"}>
                           {labelize(finding.severity)}
@@ -241,8 +241,8 @@ export function ExecutiveDashboard() {
                         <Badge>{labelize(finding.finding_type)}</Badge>
                         <Badge>{finding.provider.toUpperCase()}</Badge>
                       </div>
-                      <p className="mt-3 font-medium text-ink">{finding.title}</p>
-                      <p className="mt-1 text-sm text-steel">{finding.recommendation}</p>
+                      <p className="mt-3 font-medium text-northbound-white100">{finding.title}</p>
+                      <p className="mt-1 text-sm text-northbound-white60">{finding.recommendation}</p>
                     </div>
                   ))}
                 </div>

@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from auth.dependencies import get_current_user, require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.database import get_db
 from findings.enums import FindingCategory, FindingSeverity, FindingStatus, FindingType
 from findings.schemas import (
@@ -17,7 +18,7 @@ from findings.schemas import (
 )
 from findings.service import finding_summary, run_findings, update_finding_status
 from models.finding import Finding
-from models.user import User, UserRole
+from models.user import User
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ router = APIRouter()
 @router.post("/run", response_model=FindingRunResponse)
 def run_findings_endpoint(
     payload: FindingRunRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.FINDINGS_WRITE)),
     db: Session = Depends(get_db),
 ) -> FindingRunResponse:
     summary = run_findings(
@@ -45,7 +46,7 @@ def list_findings(
     severity: FindingSeverity | None = None,
     status_filter: FindingStatus | None = Query(default=None, alias="status"),
     category: FindingCategory | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.FINDINGS_READ)),
     db: Session = Depends(get_db),
 ) -> FindingListResponse:
     statement = select(Finding).where(Finding.tenant_id == current_user.tenant_id)
@@ -67,7 +68,7 @@ def list_findings(
 
 @router.get("/summary", response_model=FindingSummaryResponse)
 def get_findings_summary(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.FINDINGS_READ)),
     db: Session = Depends(get_db),
 ) -> FindingSummaryResponse:
     return FindingSummaryResponse(**finding_summary(db, tenant_id=current_user.tenant_id))
@@ -76,7 +77,7 @@ def get_findings_summary(
 @router.get("/{finding_id}", response_model=FindingRead)
 def get_finding(
     finding_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.FINDINGS_READ)),
     db: Session = Depends(get_db),
 ) -> Finding:
     finding = db.scalar(select(Finding).where(Finding.id == finding_id, Finding.tenant_id == current_user.tenant_id))
@@ -89,7 +90,7 @@ def get_finding(
 def patch_finding_status(
     finding_id: uuid.UUID,
     payload: FindingStatusUpdate,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.FINDINGS_WRITE)),
     db: Session = Depends(get_db),
 ) -> Finding:
     return update_finding_status(db, current_user=current_user, finding_id=finding_id, new_status=payload.status)

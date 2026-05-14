@@ -61,8 +61,8 @@ export function FindingsTable({ findings }: FindingsTableProps) {
       <CardHeader>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-ink">Findings</h2>
-            <p className="text-sm text-steel">{filtered.length} of {findings.length} deterministic findings</p>
+            <h2 className="text-lg font-semibold text-northbound-white100">Findings</h2>
+            <p className="text-sm text-northbound-white60">{filtered.length} of {findings.length} deterministic findings</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <Select value={severity} onChange={(event) => setSeverity(event.target.value)} aria-label="Severity filter">
@@ -97,8 +97,8 @@ export function FindingsTable({ findings }: FindingsTableProps) {
           <EmptyState title="No findings found" description="Run the findings engine, or clear the active filters." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-steel">
+            <table className="min-w-full divide-y divide-northbound-black80 text-sm text-northbound-white80">
+              <thead className="bg-northbound-black100/60 text-left text-xs font-semibold uppercase text-northbound-white60">
                 <tr>
                   <th className="px-3 py-3">Severity</th>
                   <th className="px-3 py-3">Type</th>
@@ -111,17 +111,17 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                   <th className="px-3 py-3">Detail</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-white/10">
                 {filtered.map((finding) => (
-                  <tr key={finding.id} className="align-top hover:bg-slate-50">
+                  <tr key={finding.id} className="align-top hover:bg-northbound-black100/45">
                     <td className="px-3 py-3"><Badge tone={severityTone(finding.severity)}>{labelize(finding.severity)}</Badge></td>
                     <td className="px-3 py-3">{labelize(finding.finding_type)}</td>
                     <td className="px-3 py-3">{labelize(finding.category)}</td>
                     <td className="px-3 py-3 font-medium uppercase">{finding.provider}</td>
-                    <td className="max-w-[10rem] truncate px-3 py-3 text-steel">{finding.resource_id ?? "Tenant scope"}</td>
-                    <td className="max-w-md px-3 py-3 font-medium text-ink">{finding.title}</td>
+                    <td className="max-w-[10rem] truncate px-3 py-3 text-northbound-white60">{finding.resource_id ?? "Tenant scope"}</td>
+                    <td className="max-w-md px-3 py-3 font-medium text-northbound-white100">{finding.title}</td>
                     <td className="px-3 py-3"><Badge tone={statusTone(finding.status)}>{labelize(finding.status)}</Badge></td>
-                    <td className="px-3 py-3 text-steel">{formatDate(finding.last_seen_at)}</td>
+                    <td className="px-3 py-3 text-northbound-white60">{formatDate(finding.last_seen_at)}</td>
                     <td className="px-3 py-3">
                       <Button variant="ghost" className="h-8 px-2" onClick={() => setSelectedFinding(finding)}>Open</Button>
                     </td>
@@ -133,12 +133,12 @@ export function FindingsTable({ findings }: FindingsTableProps) {
         )}
 
         {selectedFinding ? (
-          <div className="fixed inset-0 z-30 bg-slate-900/30 p-4" role="dialog" aria-modal="true">
-            <div className="ml-auto h-full max-w-2xl overflow-y-auto rounded-md bg-white shadow-xl">
-              <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div className="fixed inset-0 z-30 bg-northbound-black100/85 p-4" role="dialog" aria-modal="true">
+            <div className="ml-auto h-full max-w-2xl overflow-y-auto rounded-lg border border-northbound-black80 bg-northbound-black90 shadow-2xl">
+              <div className="flex items-start justify-between border-b border-white/10 px-5 py-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-ink">{selectedFinding.title}</h3>
-                  <p className="text-sm text-steel">{selectedFinding.rule_id}</p>
+                  <h3 className="text-lg font-semibold text-northbound-white100">{selectedFinding.title}</h3>
+                  <p className="text-sm text-northbound-white60">{selectedFinding.rule_id}</p>
                 </div>
                 <Button variant="secondary" onClick={() => setSelectedFinding(null)}>Close</Button>
               </div>
@@ -150,16 +150,16 @@ export function FindingsTable({ findings }: FindingsTableProps) {
                   <Badge tone={statusTone(selectedFinding.status)}>{labelize(selectedFinding.status)}</Badge>
                 </div>
                 <section>
-                  <h4 className="text-sm font-semibold text-ink">Description</h4>
-                  <p className="mt-2 text-sm text-steel">{selectedFinding.description}</p>
+                  <h4 className="text-sm font-semibold text-northbound-white100">Description</h4>
+                  <p className="mt-2 text-sm text-northbound-white60">{selectedFinding.description}</p>
                 </section>
                 <section>
-                  <h4 className="text-sm font-semibold text-ink">Recommendation</h4>
-                  <p className="mt-2 text-sm text-steel">{selectedFinding.recommendation}</p>
+                  <h4 className="text-sm font-semibold text-northbound-white100">Recommendation</h4>
+                  <p className="mt-2 text-sm text-northbound-white60">{selectedFinding.recommendation}</p>
                 </section>
                 <section>
-                  <h4 className="text-sm font-semibold text-ink">Evidence</h4>
-                  <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-slate-950 p-4 text-xs text-slate-100">
+                  <h4 className="text-sm font-semibold text-northbound-white100">Evidence</h4>
+                  <pre className="mt-2 max-h-80 overflow-auto rounded-md border border-northbound-black80 bg-northbound-black100 p-4 text-xs text-northbound-white80">
                     {JSON.stringify(selectedFinding.evidence, null, 2)}
                   </pre>
                 </section>

@@ -47,8 +47,8 @@ export function InventoryTable({ resources }: InventoryTableProps) {
       <CardHeader>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-ink">Inventory</h2>
-            <p className="text-sm text-steel">{filtered.length} of {resources.length} normalized resources</p>
+            <h2 className="text-lg font-semibold text-northbound-white100">Inventory</h2>
+            <p className="text-sm text-northbound-white60">{filtered.length} of {resources.length} normalized resources</p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <Input placeholder="Search inventory" value={search} onChange={(event) => setSearch(event.target.value)} />
@@ -78,8 +78,8 @@ export function InventoryTable({ resources }: InventoryTableProps) {
           <EmptyState title="No resources found" description="Run an AWS or OCI inventory scan, or clear the active filters." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-steel">
+            <table className="min-w-full divide-y divide-northbound-black80 text-sm text-northbound-white80">
+              <thead className="bg-northbound-black100/60 text-left text-xs font-semibold uppercase text-northbound-white60">
                 <tr>
                   <th className="px-3 py-3">Provider</th>
                   <th className="px-3 py-3">Category</th>
@@ -93,13 +93,13 @@ export function InventoryTable({ resources }: InventoryTableProps) {
                   <th className="px-3 py-3">Last discovered</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-white/10">
                 {filtered.map((resource) => (
-                  <tr key={resource.id} className="align-top hover:bg-slate-50">
-                    <td className="px-3 py-3 font-medium uppercase text-ink">{resource.provider}</td>
+                  <tr key={resource.id} className="align-top hover:bg-northbound-black100/45">
+                    <td className="px-3 py-3 font-medium uppercase text-northbound-white100">{resource.provider}</td>
                     <td className="px-3 py-3">{labelize(resource.resource_category)}</td>
-                    <td className="px-3 py-3 font-medium text-ink">{resource.name ?? resource.resource_id}</td>
-                    <td className="max-w-xs truncate px-3 py-3 text-steel" title={resource.resource_id}>{resource.resource_id}</td>
+                    <td className="px-3 py-3 font-medium text-northbound-white100">{resource.name ?? resource.resource_id}</td>
+                    <td className="max-w-xs truncate px-3 py-3 text-northbound-white60" title={resource.resource_id}>{resource.resource_id}</td>
                     <td className="px-3 py-3">{resource.region ?? "Global"}</td>
                     <td className="px-3 py-3">{labelize(resource.lifecycle_status ?? resource.status)}</td>
                     <td className="px-3 py-3">
@@ -107,7 +107,7 @@ export function InventoryTable({ resources }: InventoryTableProps) {
                     </td>
                     <td className="px-3 py-3">{labelize(resource.environment)}</td>
                     <td className="px-3 py-3">{resource.owner ?? "Unassigned"}</td>
-                    <td className="px-3 py-3 text-steel">{formatDate(resource.discovered_at)}</td>
+                    <td className="px-3 py-3 text-northbound-white60">{formatDate(resource.discovered_at)}</td>
                   </tr>
                 ))}
               </tbody>

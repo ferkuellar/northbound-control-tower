@@ -6,11 +6,17 @@ type CardProps = {
 };
 
 export function Card({ children, className = "" }: CardProps) {
-  return <section className={`rounded-md border border-slate-200 bg-white shadow-sm ${className}`}>{children}</section>;
+  return (
+    <section
+      className={`rounded-2xl border border-northbound-black80 bg-northbound-black90 shadow-[0_18px_60px_rgba(0,0,0,0.24)] transition-colors hover:border-northbound-black70 ${className}`}
+    >
+      {children}
+    </section>
+  );
 }
 
 export function CardHeader({ children, className = "" }: CardProps) {
-  return <div className={`border-b border-slate-200 px-5 py-4 ${className}`}>{children}</div>;
+  return <div className={`border-b border-white/10 px-5 py-4 ${className}`}>{children}</div>;
 }
 
 export function CardContent({ children, className = "" }: CardProps) {

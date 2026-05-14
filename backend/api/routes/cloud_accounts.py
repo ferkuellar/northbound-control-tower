@@ -3,11 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.schemas.inventory import AWSCloudAccountCreate, CloudAccountRead, OCICloudAccountCreate
-from auth.dependencies import get_current_user, require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.config import settings
 from core.database import get_db
 from models.cloud_account import CloudAccount, CloudAccountAuthType, CloudProvider
-from models.user import User, UserRole
+from models.user import User
 from services.audit_log import create_audit_log
 
 router = APIRouter()
@@ -25,7 +26,7 @@ def _request_user_agent(request: Request) -> str | None:
 def create_aws_cloud_account(
     payload: AWSCloudAccountCreate,
     request: Request,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.CLOUD_ACCOUNTS_WRITE)),
     db: Session = Depends(get_db),
 ) -> CloudAccount:
     if payload.auth_type == CloudAccountAuthType.ACCESS_KEYS and (
@@ -69,7 +70,7 @@ def create_aws_cloud_account(
 def create_oci_cloud_account(
     payload: OCICloudAccountCreate,
     request: Request,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.CLOUD_ACCOUNTS_WRITE)),
     db: Session = Depends(get_db),
 ) -> CloudAccount:
     if payload.auth_type not in {CloudAccountAuthType.OCI_CONFIG, CloudAccountAuthType.OCI_API_KEY}:
@@ -132,7 +133,7 @@ def create_oci_cloud_account(
 
 @router.get("", response_model=list[CloudAccountRead])
 def list_cloud_accounts(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.CLOUD_ACCOUNTS_READ)),
     db: Session = Depends(get_db),
 ) -> list[CloudAccount]:
     return list(

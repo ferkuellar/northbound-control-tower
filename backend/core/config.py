@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     otel_tracing_enabled: bool = Field(default=True, alias="OTEL_TRACING_ENABLED")
     otel_service_name: str = Field(default="northbound-control-tower-backend", alias="OTEL_SERVICE_NAME")
     otel_exporter_otlp_endpoint: str = Field(default="http://otel-collector:4317", alias="OTEL_EXPORTER_OTLP_ENDPOINT")
+    max_request_body_bytes: int = Field(default=1_048_576, alias="MAX_REQUEST_BODY_BYTES")
+    rate_limit_login_per_minute: int = Field(default=5, alias="RATE_LIMIT_LOGIN_PER_MINUTE")
+    rate_limit_ai_per_minute: int = Field(default=10, alias="RATE_LIMIT_AI_PER_MINUTE")
+    rate_limit_reports_per_minute: int = Field(default=5, alias="RATE_LIMIT_REPORTS_PER_MINUTE")
+    rate_limit_inventory_scan_per_minute: int = Field(default=5, alias="RATE_LIMIT_INVENTORY_SCAN_PER_MINUTE")
+    password_min_length: int = Field(default=12, alias="PASSWORD_MIN_LENGTH")
 
     database_url: str = "postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct"
     redis_url: str = "redis://redis:6379/0"

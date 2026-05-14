@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from models.tenant import TenantStatus
 from models.user import UserRole
@@ -26,8 +26,17 @@ class TenantRead(BaseModel):
 class UserCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)
     full_name: str = Field(min_length=1, max_length=255)
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=12, max_length=128)
     role: UserRole = UserRole.VIEWER
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        if not any(character.isdigit() for character in value):
+            raise ValueError("Password must contain at least one number")
+        if not any(character.isalpha() for character in value):
+            raise ValueError("Password must contain at least one letter")
+        return value
 
 
 class UserRead(BaseModel):

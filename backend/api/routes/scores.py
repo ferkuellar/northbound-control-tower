@@ -3,9 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from auth.dependencies import get_current_user, require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.database import get_db
-from models.user import User, UserRole
+from models.user import User
 from scoring.enums import ScoreType
 from scoring.schemas import (
     ScoreCalculateRequest,
@@ -22,7 +23,7 @@ router = APIRouter()
 @router.post("/calculate", response_model=ScoreCalculateResponse)
 def calculate_scores_endpoint(
     payload: ScoreCalculateRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.SCORES_CALCULATE)),
     db: Session = Depends(get_db),
 ) -> ScoreCalculateResponse:
     result = calculate_scores(
@@ -44,7 +45,7 @@ def calculate_scores_endpoint(
 def get_latest_scores(
     provider: str | None = None,
     cloud_account_id: uuid.UUID | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.SCORES_READ)),
     db: Session = Depends(get_db),
 ) -> ScoreLatestResponse:
     return ScoreLatestResponse(
@@ -58,7 +59,7 @@ def get_score_history(
     provider: str | None = None,
     cloud_account_id: uuid.UUID | None = None,
     limit: int = Query(default=50, ge=1, le=200),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.SCORES_READ)),
     db: Session = Depends(get_db),
 ) -> ScoreHistoryResponse:
     items = score_history(
@@ -76,7 +77,7 @@ def get_score_history(
 def get_score_summary(
     provider: str | None = None,
     cloud_account_id: uuid.UUID | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.SCORES_READ)),
     db: Session = Depends(get_db),
 ) -> ScoreSummaryResponse:
     return ScoreSummaryResponse(**score_summary(db, tenant_id=current_user.tenant_id, provider=provider, cloud_account_id=cloud_account_id))

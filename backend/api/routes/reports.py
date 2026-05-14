@@ -4,9 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
-from auth.dependencies import get_current_user, require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.database import get_db
-from models.user import User, UserRole
+from models.user import User
 from reports.enums import ReportFormat, ReportStatus
 from reports.errors import ReportingError
 from reports.schemas import ReportArtifactRead, ReportGenerateRequest, ReportGenerateResponse, ReportListResponse
@@ -19,7 +20,7 @@ router = APIRouter()
 @router.post("/generate", response_model=ReportGenerateResponse, status_code=status.HTTP_201_CREATED)
 def generate_report(
     payload: ReportGenerateRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.REPORTS_GENERATE)),
     db: Session = Depends(get_db),
 ) -> ReportGenerateResponse:
     try:
@@ -31,7 +32,7 @@ def generate_report(
 
 @router.get("", response_model=ReportListResponse)
 def get_reports(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.REPORTS_READ)),
     db: Session = Depends(get_db),
 ) -> ReportListResponse:
     items = list_reports(db, tenant_id=current_user.tenant_id)
@@ -41,7 +42,7 @@ def get_reports(
 @router.get("/{report_id}", response_model=ReportArtifactRead)
 def get_report_metadata(
     report_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.REPORTS_READ)),
     db: Session = Depends(get_db),
 ) -> ReportArtifactRead:
     report = get_report(db, tenant_id=current_user.tenant_id, report_id=report_id)
@@ -53,7 +54,7 @@ def get_report_metadata(
 @router.get("/{report_id}/preview", response_class=HTMLResponse)
 def preview_report(
     report_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.REPORTS_READ)),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     report = get_report(db, tenant_id=current_user.tenant_id, report_id=report_id)
@@ -67,7 +68,7 @@ def preview_report(
 @router.get("/{report_id}/download")
 def download_report(
     report_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.REPORTS_READ)),
     db: Session = Depends(get_db),
 ) -> Response:
     report = get_report(db, tenant_id=current_user.tenant_id, report_id=report_id)

@@ -40,19 +40,19 @@ export function MetricCard({ label, value, grade, trend, summary }: MetricCardPr
     <Card>
       <CardContent className="space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-medium text-steel">{label}</p>
+          <p className="text-sm font-medium text-northbound-white80">{label}</p>
           {grade ? <Badge tone={toneForGrade(grade)}>{labelize(grade)}</Badge> : null}
         </div>
         <div>
-          <p className="text-3xl font-semibold tracking-normal text-ink">{value}</p>
+          <p className="text-3xl font-semibold tracking-normal text-northbound-white100">{value}</p>
           {trend ? (
-            <p className="mt-2 inline-flex items-center gap-1 text-sm text-steel">
+            <p className="mt-2 inline-flex items-center gap-1 text-sm text-northbound-white60">
               {trendIcon(trend)}
               {labelize(trend)}
             </p>
           ) : null}
         </div>
-        {summary ? <p className="line-clamp-2 min-h-10 text-sm text-steel">{summary}</p> : null}
+        {summary ? <p className="line-clamp-2 min-h-10 text-sm text-northbound-white60">{summary}</p> : null}
       </CardContent>
     </Card>
   );

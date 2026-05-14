@@ -5,11 +5,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.schemas.inventory import InventoryScanRead
-from auth.dependencies import require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.database import get_db
 from models.cloud_account import CloudAccount, CloudProvider
 from models.inventory_scan import InventoryScan
-from models.user import User, UserRole
+from models.user import User
 from services.inventory import run_aws_inventory_scan, run_oci_inventory_scan
 
 router = APIRouter()
@@ -18,7 +19,7 @@ router = APIRouter()
 @router.post("/aws/scan/{cloud_account_id}", response_model=InventoryScanRead)
 def run_aws_scan(
     cloud_account_id: uuid.UUID,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.INVENTORY_SCAN)),
     db: Session = Depends(get_db),
 ) -> InventoryScan:
     cloud_account = db.scalar(
@@ -37,7 +38,7 @@ def run_aws_scan(
 @router.post("/oci/scan/{cloud_account_id}", response_model=InventoryScanRead)
 def run_oci_scan(
     cloud_account_id: uuid.UUID,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.INVENTORY_SCAN)),
     db: Session = Depends(get_db),
 ) -> InventoryScan:
     cloud_account = db.scalar(
@@ -56,7 +57,7 @@ def run_oci_scan(
 @router.get("/scans/{scan_id}", response_model=InventoryScanRead)
 def get_scan(
     scan_id: uuid.UUID,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST, UserRole.VIEWER])),
+    current_user: User = Depends(require_permission(Permission.INVENTORY_READ)),
     db: Session = Depends(get_db),
 ) -> InventoryScan:
     scan = db.scalar(select(InventoryScan).where(InventoryScan.id == scan_id, InventoryScan.tenant_id == current_user.tenant_id))

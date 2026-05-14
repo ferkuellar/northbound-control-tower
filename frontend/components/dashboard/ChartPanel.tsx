@@ -36,8 +36,8 @@ export function ChartPanel({ title, description, option, emptyTitle = "No chart 
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
-        {description ? <p className="mt-1 text-sm text-steel">{description}</p> : null}
+        <h3 className="text-base font-semibold text-northbound-white100">{title}</h3>
+        {description ? <p className="mt-1 text-sm text-northbound-white60">{description}</p> : null}
       </CardHeader>
       <CardContent>
         {option ? <div ref={chartRef} className="h-72 w-full" /> : <EmptyState title={emptyTitle} />}

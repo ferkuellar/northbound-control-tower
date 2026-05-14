@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session
 from ai.errors import AIAnalysisError
 from ai.schemas import AIAnalysisListResponse, AIAnalysisRead, AIAnalysisRequest, AIAnalysisResponse, AIContextPreview, AIProviderStatus
 from ai.service import AIAnalysisService, get_analysis, list_analyses, provider_statuses
-from auth.dependencies import get_current_user, require_roles
+from auth.guards import require_permission
+from auth.permissions import Permission
 from core.config import settings
 from core.database import get_db
-from models.user import User, UserRole
+from models.user import User
 from services.audit_log import create_audit_log
 
 router = APIRouter()
@@ -17,7 +18,7 @@ router = APIRouter()
 
 @router.get("/providers", response_model=list[AIProviderStatus])
 def get_ai_providers(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.AI_READ)),
     db: Session = Depends(get_db),
 ) -> list[AIProviderStatus]:
     statuses = provider_statuses()
@@ -37,7 +38,7 @@ def get_ai_providers(
 def get_context_preview(
     cloud_account_id: uuid.UUID | None = Query(default=None),
     cloud_provider: str | None = Query(default=None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.AI_READ)),
     db: Session = Depends(get_db),
 ) -> AIContextPreview:
     context = AIAnalysisService(db).context_preview(
@@ -57,7 +58,7 @@ def get_context_preview(
 @router.post("/analyze", response_model=AIAnalysisResponse, status_code=status.HTTP_201_CREATED)
 def analyze(
     payload: AIAnalysisRequest,
-    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    current_user: User = Depends(require_permission(Permission.AI_GENERATE)),
     db: Session = Depends(get_db),
 ) -> AIAnalysisResponse:
     try:
@@ -69,7 +70,7 @@ def analyze(
 
 @router.get("/analyses", response_model=AIAnalysisListResponse)
 def get_analyses(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.AI_READ)),
     db: Session = Depends(get_db),
 ) -> AIAnalysisListResponse:
     items = list_analyses(db, tenant_id=current_user.tenant_id)
@@ -79,7 +80,7 @@ def get_analyses(
 @router.get("/analyses/{analysis_id}", response_model=AIAnalysisRead)
 def get_analysis_detail(
     analysis_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(Permission.AI_READ)),
     db: Session = Depends(get_db),
 ) -> AIAnalysisRead:
     analysis = get_analysis(db, tenant_id=current_user.tenant_id, analysis_id=analysis_id)

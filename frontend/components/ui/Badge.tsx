@@ -6,11 +6,11 @@ type BadgeProps = {
 };
 
 const tones = {
-  neutral: "border-slate-200 bg-slate-50 text-steel",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700",
-  danger: "border-red-200 bg-red-50 text-risk",
-  info: "border-sky-200 bg-sky-50 text-sky-700",
+  neutral: "border-northbound-black80 bg-northbound-black100 text-northbound-white60",
+  success: "border-emerald-500/30 bg-emerald-950/50 text-emerald-200",
+  warning: "border-amber-500/30 bg-amber-950/50 text-amber-200",
+  danger: "border-red-500/30 bg-red-950/60 text-red-200",
+  info: "border-sky-500/30 bg-sky-950/50 text-sky-200",
 };
 
 export function Badge({ tone = "neutral", children }: BadgeProps) {
