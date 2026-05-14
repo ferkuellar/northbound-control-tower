@@ -15,6 +15,10 @@
 | `nb evidence show <request_id>` | Show request evidence and artifacts | VIEWER | LOW | Yes | `nb evidence show REQ-1001` |
 | `nb terraform validate <request_id>` | Prepare workspace, run Terraform init and validate | OPERATOR | HIGH | Yes | `nb terraform validate REQ-1001` |
 | `nb terraform plan <request_id>` | Run Terraform plan and convert plan to JSON | OPERATOR | HIGH | Yes | `nb terraform plan REQ-1001` |
+| `nb security scan <request_id>` | Run Checkov scan against the Terraform workspace | OPERATOR | HIGH | Yes | `nb security scan REQ-1001` |
+| `nb cost estimate <request_id>` | Run Infracost estimate for the Terraform workspace | OPERATOR | MEDIUM | Yes | `nb cost estimate REQ-1001` |
+| `nb risk summary <request_id>` | Generate JSON and Markdown risk summary | OPERATOR | MEDIUM | Yes | `nb risk summary REQ-1001` |
+| `nb gates evaluate <request_id>` | Evaluate policy gates and set gate decision | OPERATOR | HIGH | Yes | `nb gates evaluate REQ-1001` |
 | `nb terraform apply <request_id>` | Future controlled apply | OPERATOR | CRITICAL | No | `nb terraform apply REQ-1001` |
 | `nb terraform destroy <request_id>` | Destructive Terraform command | N/A | CRITICAL | Blocked | `nb terraform destroy REQ-1001` |
 | `nb approve <request_id>` | Future approval command | APPROVER | HIGH | No | `nb approve REQ-1001` |
@@ -41,11 +45,22 @@ TERRAFORM_VALIDATE_SUCCEEDED
 
 ```text
 Command recognized but disabled in this phase.
-Reason: Terraform apply requires approval workflow, security gates, cost review and controlled execution policy.
+Reason: Approval and apply require completed security gates, cost review and explicit approval workflow.
 ```
 
 ## Terraform Destroy Blocked Output
 
 ```text
-Command blocked. Only Northbound controlled commands are allowed.
+Command blocked. Terraform destroy is not available from Northbound Cloud Shell.
+```
+
+## Phase D Command Flow
+
+```text
+nb terraform plan REQ-1001
+nb security scan REQ-1001
+nb cost estimate REQ-1001
+nb risk summary REQ-1001
+nb gates evaluate REQ-1001
+nb evidence show REQ-1001
 ```

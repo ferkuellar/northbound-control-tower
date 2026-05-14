@@ -6,11 +6,20 @@ from cloud_shell.services.disabled_service import DisabledFutureCommand
 from cloud_shell.services.evidence_shell_service import EvidenceShowCommand
 from cloud_shell.services.findings_shell_service import FindingsListCommand, FindingsShowCommand
 from cloud_shell.services.fix_shell_service import FixPlanCommand, FixSuggestCommand
+from cloud_shell.services.cost_shell_service import CostEstimateCommand
+from cloud_shell.services.gates_shell_service import GatesEvaluateCommand
 from cloud_shell.services.help_service import HelpCommand
+from cloud_shell.services.risk_shell_service import RiskSummaryCommand
 from cloud_shell.services.request_shell_service import RequestsListCommand, RequestsShowCommand
+from cloud_shell.services.security_shell_service import SecurityScanCommand
 from cloud_shell.services.status_service import StatusCommand
 from cloud_shell.services.templates_shell_service import TemplatesListCommand, TemplatesShowCommand
-from cloud_shell.services.terraform_shell_service import TerraformApplyDisabledCommand, TerraformPlanCommand, TerraformValidateCommand
+from cloud_shell.services.terraform_shell_service import (
+    TerraformApplyDisabledCommand,
+    TerraformDestroyBlockedCommand,
+    TerraformPlanCommand,
+    TerraformValidateCommand,
+)
 
 
 def build_default_registry() -> CommandRegistry:
@@ -144,6 +153,50 @@ def build_default_registry() -> CommandRegistry:
         ),
         CommandDefinition(
             "nb",
+            "security",
+            "scan",
+            "Run Checkov security scan for a planned request",
+            "OPERATOR",
+            CloudShellRiskLevel.HIGH,
+            False,
+            True,
+            SecurityScanCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "cost",
+            "estimate",
+            "Run Infracost estimate for a planned request",
+            "OPERATOR",
+            CloudShellRiskLevel.MEDIUM,
+            False,
+            True,
+            CostEstimateCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "risk",
+            "summary",
+            "Generate request risk summary",
+            "OPERATOR",
+            CloudShellRiskLevel.MEDIUM,
+            False,
+            True,
+            RiskSummaryCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "gates",
+            "evaluate",
+            "Evaluate policy gates for a planned request",
+            "OPERATOR",
+            CloudShellRiskLevel.HIGH,
+            False,
+            True,
+            GatesEvaluateCommand(),
+        ),
+        CommandDefinition(
+            "nb",
             "terraform",
             "apply",
             "Future controlled Terraform apply",
@@ -152,6 +205,17 @@ def build_default_registry() -> CommandRegistry:
             True,
             False,
             TerraformApplyDisabledCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "terraform",
+            "destroy",
+            "Blocked Terraform destroy command",
+            "OPERATOR",
+            CloudShellRiskLevel.CRITICAL,
+            True,
+            True,
+            TerraformDestroyBlockedCommand(),
         ),
         CommandDefinition(
             "nb",

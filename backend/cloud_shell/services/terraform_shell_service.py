@@ -31,7 +31,7 @@ class TerraformValidateCommand:
             .line(request.workspace_path or "not prepared")
             .line("")
             .line("Steps:")
-            .line(f"- workspace prepared: OK")
+            .line("- workspace prepared: OK")
             .line(f"- terraform init: {'OK' if init_result.success else 'FAILED'}")
         )
         if validate_result:
@@ -96,6 +96,16 @@ class TerraformApplyDisabledCommand:
             ShellResponseBuilder(parsed.command_name)
             .with_status("not_implemented")
             .line("Command recognized but disabled in this phase.")
-            .line("Reason: Terraform apply requires approval workflow, security gates, cost review and controlled execution policy.")
+            .line("Reason: Approval and apply require completed security gates, cost review and explicit approval workflow.")
+            .build()
+        )
+
+
+class TerraformDestroyBlockedCommand:
+    def execute(self, db: Session, parsed: ParsedCommand, user_context: ShellUserContext) -> ShellResponse:
+        return (
+            ShellResponseBuilder(parsed.command_name)
+            .with_status("blocked")
+            .line("Command blocked. Terraform destroy is not available from Northbound Cloud Shell.")
             .build()
         )

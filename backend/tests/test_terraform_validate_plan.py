@@ -9,10 +9,9 @@ from types import SimpleNamespace
 from sqlalchemy.orm import Session
 
 from cloud_shell.command_executor import CloudShellExecutor
-from cloud_shell.command_parser import CommandParser
 from cloud_shell.schemas import ShellUserContext
 from core.database import SessionLocal
-from models.provisioning_request import ProvisioningArtifact, ProvisioningRequest
+from models.provisioning_request import ProvisioningRequest
 from models.tenant import Tenant
 from models.user import User, UserRole
 from provisioning.artifact_service import ProvisioningArtifactService, sanitize_sensitive_text

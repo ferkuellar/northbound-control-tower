@@ -20,7 +20,6 @@ BLOCKED_TOKENS = {
 }
 
 BLOCKED_PHRASES = {
-    "terraform destroy",
     "terraform apply -auto-approve",
     "apply -auto-approve",
     "aws s3 rm",
@@ -37,6 +36,8 @@ class CommandParser:
             raise CommandParseError("Command is empty. Type: nb help")
 
         normalized = command.lower()
+        if normalized.startswith("nb terraform destroy"):
+            raise CommandBlockedError("Command blocked. Terraform destroy is not available from Northbound Cloud Shell.")
         if "../" in command or "..\\" in command or "/etc/passwd" in normalized or ".env" in normalized:
             raise CommandBlockedError("Command blocked. Only Northbound controlled commands are allowed.")
         if any(phrase in normalized for phrase in BLOCKED_PHRASES):
