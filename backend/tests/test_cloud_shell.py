@@ -50,9 +50,11 @@ def test_command_registry_finds_valid_and_marks_disabled() -> None:
 
     status = registry.get(CommandParser().parse("nb status"))
     terraform = registry.get(CommandParser().parse("nb terraform plan REQ-1001"))
+    apply = registry.get(CommandParser().parse("nb terraform apply REQ-1001"))
 
     assert status.enabled is True
-    assert terraform.enabled is False
+    assert terraform.enabled is True
+    assert apply.enabled is False
 
 
 def test_authorization_role_mapping() -> None:

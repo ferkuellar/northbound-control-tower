@@ -20,8 +20,9 @@ def _next_request_number(db: Session) -> tuple[str, int]:
     return f"REQ-{sequence}", sequence
 
 
-def build_tfvars(finding: Finding, template: TerraformTemplateDefinition) -> dict[str, Any]:
+def build_tfvars(finding: Finding, template: TerraformTemplateDefinition, request_number: str | None = None) -> dict[str, Any]:
     return {
+        "request_code": request_number,
         "provider": finding.provider,
         "finding_id": str(finding.id),
         "cloud_account_id": str(finding.cloud_account_id),
@@ -40,13 +41,14 @@ class ProvisioningRequestService:
     def create_from_finding(self, *, finding: Finding, current_user: User | None) -> ProvisioningRequest:
         template = template_for_finding_type(finding.finding_type, finding.provider)
         request_number, sequence = _next_request_number(self.db)
-        tfvars = build_tfvars(finding, template)
+        tfvars = build_tfvars(finding, template, request_number)
         evidence = {
             "source": "cloud_shell",
             "phase": "B",
             "finding_title": finding.title,
             "finding_type": finding.finding_type,
             "template_module_path": template.module_path,
+            "phase_c_execution_template": "local-noop-validation",
             "terraform_execution": "disabled",
             "approval": "not_available_in_phase_b",
             "notes": [

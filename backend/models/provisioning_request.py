@@ -55,8 +55,11 @@ class ProvisioningArtifact(Base, TimestampMixin):
     artifact_type: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     content_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    content_type: Mapped[str | None] = mapped_column(String(120), nullable=True)
     storage_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     checksum: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    size_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     request: Mapped["ProvisioningRequest"] = relationship()

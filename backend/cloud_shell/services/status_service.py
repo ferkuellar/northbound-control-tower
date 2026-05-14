@@ -16,9 +16,10 @@ class StatusCommand:
             .line("WebSocket: OK")
             .line("Command Registry: OK")
             .line("Audit Logger: OK")
-            .line("Terraform Runner: Disabled")
+            .line("Terraform Runner: Enabled for validate/plan only")
+            .line("Terraform Apply: Disabled")
+            .line("Terraform Destroy: Blocked")
             .line("Auto-remediation: Disabled")
             .line("Mode: Controlled Command Shell")
             .build()
         )
-

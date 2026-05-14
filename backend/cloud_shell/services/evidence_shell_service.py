@@ -23,13 +23,18 @@ class EvidenceShowCommand:
             .line(f"Evidence for {request.request_number}")
             .line("")
             .line(f"Status: {request.status}")
-            .line("Terraform plan artifact: Not generated in this phase")
             .line(f"Approval required: {request.approval_required}")
-            .line("Post-remediation validation: Not available in this phase")
             .line("")
             .line("Stored artifacts:")
             .meta("related_request_id", request.request_number)
         )
         for artifact in artifacts:
-            builder.line(f"- {artifact.name} ({artifact.artifact_type})")
+            size = f"{artifact.size_bytes} bytes" if artifact.size_bytes is not None else "metadata"
+            builder.line(f"{artifact.artifact_type}")
+            builder.line(f"- {artifact.name}")
+            builder.line(f"- created_at: {artifact.created_at.isoformat() if artifact.created_at else artifact.generated_at.isoformat()}")
+            builder.line(f"- size: {size}")
+            if artifact.storage_path:
+                builder.line(f"- path: {artifact.storage_path}")
+            builder.line("")
         return builder.build()

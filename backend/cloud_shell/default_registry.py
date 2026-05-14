@@ -9,6 +9,8 @@ from cloud_shell.services.fix_shell_service import FixPlanCommand, FixSuggestCom
 from cloud_shell.services.help_service import HelpCommand
 from cloud_shell.services.request_shell_service import RequestsListCommand, RequestsShowCommand
 from cloud_shell.services.status_service import StatusCommand
+from cloud_shell.services.templates_shell_service import TemplatesListCommand, TemplatesShowCommand
+from cloud_shell.services.terraform_shell_service import TerraformApplyDisabledCommand, TerraformPlanCommand, TerraformValidateCommand
 
 
 def build_default_registry() -> CommandRegistry:
@@ -65,6 +67,28 @@ def build_default_registry() -> CommandRegistry:
         ),
         CommandDefinition(
             "nb",
+            "templates",
+            "list",
+            "List provisioning templates",
+            "OPERATOR",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            TemplatesListCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "templates",
+            "show",
+            "Show provisioning template details",
+            "OPERATOR",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            TemplatesShowCommand(),
+        ),
+        CommandDefinition(
+            "nb",
             "requests",
             "list",
             "List draft provisioning requests",
@@ -100,34 +124,34 @@ def build_default_registry() -> CommandRegistry:
             "nb",
             "terraform",
             "validate",
-            "Future Terraform validate",
-            "APPROVER",
+            "Run Terraform init and validate for a provisioning request",
+            "OPERATOR",
             CloudShellRiskLevel.HIGH,
-            True,
             False,
-            DisabledFutureCommand(),
+            True,
+            TerraformValidateCommand(),
         ),
         CommandDefinition(
             "nb",
             "terraform",
             "plan",
-            "Future Terraform plan",
-            "APPROVER",
+            "Run Terraform plan for a validated provisioning request",
+            "OPERATOR",
             CloudShellRiskLevel.HIGH,
-            True,
             False,
-            DisabledFutureCommand(),
+            True,
+            TerraformPlanCommand(),
         ),
         CommandDefinition(
             "nb",
             "terraform",
             "apply",
             "Future controlled Terraform apply",
-            "APPROVER",
+            "OPERATOR",
             CloudShellRiskLevel.CRITICAL,
             True,
             False,
-            DisabledFutureCommand(),
+            TerraformApplyDisabledCommand(),
         ),
         CommandDefinition(
             "nb",
@@ -155,4 +179,3 @@ def build_default_registry() -> CommandRegistry:
     for definition in definitions:
         registry.register(definition)
     return registry
-

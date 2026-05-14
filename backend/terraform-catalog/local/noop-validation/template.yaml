@@ -1,0 +1,15 @@
+id: local-noop-validation
+name: Local No-op Terraform Validation
+cloud_provider: LOCAL
+resource_type: NONE
+remediation_type: TEST
+risk_level: LOW
+requires_approval: false
+enabled: true
+terraform_enabled: true
+template_path: terraform-catalog/local/noop-validation
+description: Safe no-op template used to validate Terraform runner workflow without cloud changes.
+inputs:
+  request_code:
+    type: string
+    required: true
