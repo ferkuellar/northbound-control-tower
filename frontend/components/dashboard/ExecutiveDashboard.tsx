@@ -1,109 +1,68 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { DashboardShell } from "@/components/layout/DashboardShell";
-import { ScoreCards } from "@/components/scores/ScoreCards";
-import { ScoreCharts } from "@/components/scores/ScoreCharts";
-import { FindingsTable } from "@/components/findings/FindingsTable";
-import { InventoryTable } from "@/components/resources/InventoryTable";
-import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { ApiError, getCloudAccounts, getCurrentUser, getFindings, getFindingsSummary, getResources, getScoreHistory, getScoresLatest, getScoresSummary } from "@/lib/api";
+import { ErrorState } from "@/components/dashboard/ErrorState";
+import { FindingsSummaryBar } from "@/components/dashboard/FindingsSummaryBar";
+import { InventorySummary } from "@/components/dashboard/InventorySummary";
+import { ReportActions } from "@/components/dashboard/ReportActions";
+import { RiskSummary } from "@/components/dashboard/RiskSummary";
+import { ScoreGrid } from "@/components/dashboard/ScoreGrid";
+import { SectionLabel } from "@/components/dashboard/SectionLabel";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { getExecutiveDashboard } from "@/lib/api/dashboard";
+import { listAdminTenants } from "@/lib/api/admin";
+import { downloadReportArtifact, generateReport, listReports, openReportPreview } from "@/lib/api/reports";
 import { clearSession, getToken, setStoredUser } from "@/lib/auth";
-import {
-  countBy,
-  countPublicResources,
-  countUntaggedResources,
-  labelize,
-  openFindings,
-  topRiskFindings,
-} from "@/lib/formatters";
-import type { DashboardData } from "@/lib/types";
+import { ApiError, getCurrentUser } from "@/lib/api";
+import type { User } from "@/lib/types";
+import type { AdminTenant } from "@/types/admin";
+import type { ExecutiveDashboardData } from "@/types/dashboard";
 
 type DashboardState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; data: DashboardData };
+  | { status: "ready"; user: User; tenants: AdminTenant[]; data: ExecutiveDashboardData };
 
-function numberCard(label: string, value: number | string, detail?: string) {
-  return (
-    <Card key={label}>
-      <CardContent>
-        <p className="text-sm font-medium text-northbound-white80">{label}</p>
-        <p className="mt-2 text-3xl font-semibold text-northbound-white100">{value}</p>
-        {detail ? <p className="mt-2 text-sm text-northbound-white60">{detail}</p> : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function inlineStat(label: string, value: number | string) {
-  return (
-    <div key={label} className="rounded-md border border-northbound-black80 bg-northbound-black100/45 p-4">
-      <p className="text-sm font-medium text-northbound-white80">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-northbound-white100">{value}</p>
-    </div>
-  );
-}
-
-function SummaryList({ title, items }: { title: string; items: Record<string, number> }) {
-  const entries = Object.entries(items).sort((left, right) => right[1] - left[1]);
-  return (
-    <Card>
-      <CardHeader>
-        <h3 className="text-base font-semibold text-northbound-white100">{title}</h3>
-      </CardHeader>
-      <CardContent>
-        {entries.length === 0 ? (
-          <EmptyState title="No data available" />
-        ) : (
-          <div className="space-y-3">
-            {entries.slice(0, 8).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between gap-4">
-                <span className="text-sm text-northbound-white60">{labelize(key)}</span>
-                <span className="rounded-md border border-northbound-black80 bg-northbound-black100 px-2 py-1 text-sm font-semibold text-northbound-white100">{value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+function formatRelativeTime(value: string): string {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "Unknown";
+  const minutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  return `${Math.round(hours / 24)} days ago`;
 }
 
 export function ExecutiveDashboard() {
   const router = useRouter();
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const [selectedCloudAccountId, setSelectedCloudAccountId] = useState<string>("");
   const [state, setState] = useState<DashboardState>({ status: "loading" });
+  const [reportBusy, setReportBusy] = useState(false);
 
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    async function loadDashboard(currentToken: string) {
+  const loadDashboard = useCallback(
+    async (tenantId?: string) => {
+      const token = getToken();
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+      setState((current) => (current.status === "ready" ? current : { status: "loading" }));
       try {
-        const [user, resources, findings, findingSummary, scoresLatest, scoreSummary, scoreHistory, cloudAccounts] =
-          await Promise.all([
-            getCurrentUser(currentToken),
-            getResources(currentToken),
-            getFindings(currentToken),
-            getFindingsSummary(currentToken),
-            getScoresLatest(currentToken),
-            getScoresSummary(currentToken),
-            getScoreHistory(currentToken),
-            getCloudAccounts(currentToken),
-          ]);
-
+        const user = await getCurrentUser(token);
+        const tenants = user.role === "ADMIN" ? await listAdminTenants(token).catch(() => []) : [];
+        const effectiveTenantId = tenantId || selectedTenantId || tenants[0]?.id;
+        const data = await getExecutiveDashboard(token, effectiveTenantId);
         setStoredUser(user);
-        setState({
-          status: "ready",
-          data: { user, resources, findings, findingSummary, scoresLatest, scoreSummary, scoreHistory, cloudAccounts },
-        });
+        setSelectedTenantId(effectiveTenantId || data.tenant?.id || user.tenant_id);
+        setSelectedCloudAccountId((current) => current || data.cloud_accounts?.[0]?.id || "");
+        setState({ status: "ready", user, tenants, data });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
           clearSession();
@@ -112,150 +71,133 @@ export function ExecutiveDashboard() {
         }
         setState({ status: "error", message: error instanceof Error ? error.message : "Dashboard unavailable" });
       }
-    }
+    },
+    [router, selectedTenantId],
+  );
 
-    void loadDashboard(token);
-  }, [router]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadDashboard();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadDashboard]);
+
+  const selectedTenant = useMemo(() => {
+    if (state.status !== "ready") return null;
+    return state.tenants.find((tenant) => tenant.id === selectedTenantId) ?? null;
+  }, [selectedTenantId, state]);
+
+  async function generate(reportType: "executive" | "technical") {
+    const token = getToken();
+    if (!token) return;
+    setReportBusy(true);
+    try {
+      const report = await generateReport(token, reportType, "pdf", selectedTenantId);
+      await downloadReportArtifact(token, report);
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
+  async function openLatest(mode: "preview" | "download" | "print") {
+    const token = getToken();
+    if (!token) return;
+    const reports = await listReports(token, selectedTenantId);
+    const latest = reports[0];
+    if (!latest) return;
+    if (mode === "download") {
+      await downloadReportArtifact(token, latest);
+      return;
+    }
+    await openReportPreview(token, latest, mode === "print");
+  }
 
   if (state.status === "loading") {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-northbound-black100 px-4">
-        <Card className="w-full max-w-md">
-          <CardContent>
-            <p className="text-sm font-semibold text-northbound-white100">Loading executive dashboard</p>
-            <p className="mt-2 text-sm text-northbound-white60">Fetching scores, findings, and inventory from the backend.</p>
-          </CardContent>
-        </Card>
-      </main>
-    );
+    return null;
   }
 
   if (state.status === "error") {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-northbound-black100 px-4">
-        <Card className="w-full max-w-lg">
-          <CardContent>
-            <p className="text-sm font-semibold text-risk">Dashboard unavailable</p>
-            <p className="mt-2 text-sm text-northbound-white60">{state.message}</p>
-          </CardContent>
-        </Card>
-      </main>
-    );
+    return <ErrorState message={state.message} onRetry={() => void loadDashboard(selectedTenantId)} />;
   }
 
-  const { data } = state;
-  const activeFindings = openFindings(data.findings.items);
-  const riskFindings = topRiskFindings(activeFindings);
-  const providers = Object.keys(countBy(data.resources, (resource) => resource.provider));
-  const resourcesByProvider = countBy(data.resources, (resource) => resource.provider);
-  const resourcesByCategory = countBy(data.resources, (resource) => resource.resource_category);
+  const { data, user, tenants } = state;
+  const selectedCloudAccount = data.cloud_accounts?.find((account) => account.id === selectedCloudAccountId) ?? data.cloud_accounts?.[0];
+  const tenantName = selectedTenant?.name ?? data.tenant?.name ?? "Current tenant";
 
   return (
-    <DashboardShell user={data.user} cloudAccounts={data.cloudAccounts} onLogout={() => router.replace("/login")}>
-      <div className="space-y-6">
-        <section id="overview" className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-northbound-white100">Overview</h2>
-            <p className="text-sm text-northbound-white60">Executive scorecards from deterministic backend scores.</p>
-          </div>
-          <ScoreCards scores={data.scoresLatest.items} summary={data.scoreSummary} />
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {numberCard("Critical findings", data.findingSummary.by_severity.critical ?? 0)}
-          {numberCard("High findings", data.findingSummary.by_severity.high ?? 0)}
-          {numberCard("Open findings", activeFindings.length)}
-          {numberCard("Cloud accounts", data.cloudAccounts.length)}
-          {numberCard("Providers", providers.length || "N/A", providers.map((provider) => provider.toUpperCase()).join(", "))}
-        </section>
-
-        <section className="grid gap-4 xl:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-northbound-white100">Inventory Summary</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-3">
-                {inlineStat("Total resources", data.resources.length)}
-                {inlineStat("Public resources", countPublicResources(data.resources))}
-                {inlineStat("Untagged resources", countUntaggedResources(data.resources))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-northbound-white100">Risk Summary</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(data.findingSummary.by_type).slice(0, 8).map(([type, count]) => (
-                  <Badge key={type} tone={count > 0 ? "warning" : "neutral"}>
-                    {labelize(type)}: {count}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        <section id="scores" className="space-y-4">
-          <h2 className="text-lg font-semibold text-northbound-white100">Scores</h2>
-          <ScoreCharts
-            summary={data.scoreSummary}
-            history={data.scoreHistory.items}
-            findingsSummary={data.findingSummary}
+    <main className="min-h-screen bg-northbound-bg p-3 text-northbound-text">
+      <div className="flex min-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-2xl border border-northbound-border md:flex-row">
+        <Sidebar user={user} openFindingsCount={data.findings.open} />
+        <section className="flex min-w-0 flex-1 flex-col bg-northbound-bg">
+          <TopBar
+            tenantName={tenantName}
+            selectedScope={selectedCloudAccount ? `${selectedCloudAccount.name} · ${selectedCloudAccount.provider.toUpperCase()}` : "Select cloud account"}
+            cloudAccountsCount={data.findings.cloud_accounts}
+            providers={data.findings.providers}
+            onRefresh={() => void loadDashboard(selectedTenantId)}
           />
-        </section>
+          <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            <section className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-northbound-textMuted">Client</span>
+                  <Select value={selectedTenantId} onChange={(event) => void loadDashboard(event.target.value)}>
+                    <option value="">{tenants.length ? "Select client" : tenantName}</option>
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.name}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-northbound-textMuted">Cloud account</span>
+                  <Select value={selectedCloudAccountId} onChange={(event) => setSelectedCloudAccountId(event.target.value)}>
+                    {data.cloud_accounts?.length ? null : <option value="">Select cloud account</option>}
+                    {data.cloud_accounts?.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} · {account.provider.toUpperCase()}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              </div>
+              <div className="rounded-xl border border-northbound-border bg-northbound-panel px-4 py-3 text-xs text-northbound-textMuted">
+                <span className="font-semibold text-northbound-textSecondary">Last scan:</span> {formatRelativeTime(data.last_collected_at)}
+              </div>
+            </section>
 
-        <section id="findings" className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-4">
-            <SummaryList title="Findings by Severity" items={data.findingSummary.by_severity} />
-            <SummaryList title="Findings by Category" items={data.findingSummary.by_category} />
-            <SummaryList title="Findings by Provider" items={data.findingSummary.by_provider} />
-            <SummaryList title="Top Finding Types" items={data.findingSummary.by_type} />
+            <section id="overview" className="space-y-3">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <SectionLabel eyebrow="Operational Scores" title={`${tenantName} cloud operations`} description="Compact V2 score overview from deterministic backend data." />
+                <ReportActions
+                  isBusy={reportBusy}
+                  onGenerateExecutive={() => void generate("executive")}
+                  onGenerateTechnical={() => void generate("technical")}
+                  onPreviewLatest={() => void openLatest("preview")}
+                  onDownloadLatest={() => void openLatest("download")}
+                  onPrint={() => void openLatest("print")}
+                />
+              </div>
+              <ScoreGrid data={data} />
+            </section>
+
+            <FindingsSummaryBar findings={data.findings} />
+
+            <section className="grid gap-3 xl:grid-cols-2">
+              <InventorySummary inventory={data.inventory} />
+              <RiskSummary risks={data.risks} />
+            </section>
+
+            <section id="cloud-accounts" className="rounded-2xl border border-northbound-border bg-northbound-panel p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <SectionLabel title="Client cloud context" description="The selected client controls inventory, findings, scores, reports, and analysis scope." />
+                <Button variant="secondary" onClick={() => router.push("/admin/clients")}>Manage Clients</Button>
+              </div>
+            </section>
           </div>
-          <FindingsTable findings={data.findings.items} />
-        </section>
-
-        <section id="inventory">
-          <InventoryTable resources={data.resources} />
-        </section>
-
-        <section id="risks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-northbound-white100">Risk Prioritization</h2>
-              <p className="text-sm text-northbound-white60">Top deterministic findings ordered by severity and recency.</p>
-            </CardHeader>
-            <CardContent>
-              {riskFindings.length === 0 ? (
-                <EmptyState title="No active risk findings" description="Open or acknowledged findings will appear here." />
-              ) : (
-                <div className="space-y-3">
-                  {riskFindings.map((finding) => (
-                    <div key={finding.id} className="rounded-md border border-northbound-black80 bg-northbound-black100/45 p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={finding.severity === "critical" || finding.severity === "high" ? "danger" : "warning"}>
-                          {labelize(finding.severity)}
-                        </Badge>
-                        <Badge>{labelize(finding.finding_type)}</Badge>
-                        <Badge>{finding.provider.toUpperCase()}</Badge>
-                      </div>
-                      <p className="mt-3 font-medium text-northbound-white100">{finding.title}</p>
-                      <p className="mt-1 text-sm text-northbound-white60">{finding.recommendation}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </section>
-
-        <section id="trends" className="grid gap-4 xl:grid-cols-2">
-          <SummaryList title="Resources by Provider" items={resourcesByProvider} />
-          <SummaryList title="Resources by Category" items={resourcesByCategory} />
         </section>
       </div>
-    </DashboardShell>
+    </main>
   );
 }

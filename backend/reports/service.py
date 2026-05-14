@@ -33,9 +33,10 @@ class ReportingService:
         started = time.perf_counter()
         title = self._title(request.report_type)
         branding = merge_branding(request.branding)
+        tenant_id = self._tenant_id(current_user=current_user, requested_tenant_id=request.tenant_id)
         create_audit_log(
             self.db,
-            tenant_id=current_user.tenant_id,
+            tenant_id=tenant_id,
             user_id=current_user.id,
             action="report_generation_started",
             resource_type="report",
@@ -54,7 +55,7 @@ class ReportingService:
                 operation_name="report_generation",
             ):
                 context = ReportContextBuilder(self.db).build(
-                    tenant_id=current_user.tenant_id,
+                    tenant_id=tenant_id,
                     report_type=request.report_type,
                     provider=request.provider,
                     cloud_account_id=request.cloud_account_id,
@@ -63,7 +64,7 @@ class ReportingService:
                 validate_report_html(title=title, html=html, report_type=request.report_type)
 
             report = ReportArtifact(
-                tenant_id=current_user.tenant_id,
+                tenant_id=tenant_id,
                 cloud_account_id=request.cloud_account_id,
                 provider=request.provider,
                 report_type=request.report_type.value,
@@ -84,7 +85,7 @@ class ReportingService:
             self.db.flush()
 
             if request.report_format == ReportFormat.PDF:
-                pdf_metadata = self.pdf_renderer.render_to_file(html=html, tenant_id=current_user.tenant_id, report_id=report.id)
+                pdf_metadata = self.pdf_renderer.render_to_file(html=html, tenant_id=tenant_id, report_id=report.id)
                 report.storage_path = str(pdf_metadata["storage_path"])
                 report.file_size_bytes = int(pdf_metadata["file_size_bytes"])
                 report.checksum = str(pdf_metadata["checksum"])
@@ -96,7 +97,7 @@ class ReportingService:
             report.metadata_json = {**report.metadata_json, "generation_time_ms": int((time.perf_counter() - started) * 1000)}
             create_audit_log(
                 self.db,
-                tenant_id=current_user.tenant_id,
+                tenant_id=tenant_id,
                 user_id=current_user.id,
                 action="report_generation_completed",
                 resource_type="report",
@@ -122,7 +123,7 @@ class ReportingService:
             REPORT_GENERATION_FAILURES_TOTAL.labels(request.report_type.value, request.report_format.value).inc()
             create_audit_log(
                 self.db,
-                tenant_id=current_user.tenant_id,
+                tenant_id=tenant_id,
                 user_id=current_user.id,
                 action="report_generation_failed",
                 resource_type="report",
@@ -141,6 +142,13 @@ class ReportingService:
         if report_type == ReportType.EXECUTIVE:
             return "Northbound Executive Cloud Operations Report"
         return "Northbound Technical Cloud Assessment Report"
+
+    def _tenant_id(self, *, current_user: User, requested_tenant_id: uuid.UUID | None) -> uuid.UUID:
+        if requested_tenant_id is None:
+            return current_user.tenant_id
+        if current_user.role != "ADMIN" and requested_tenant_id != current_user.tenant_id:
+            raise ReportingError("Tenant access denied")
+        return requested_tenant_id
 
 
 def list_reports(db: Session, *, tenant_id: uuid.UUID) -> list[ReportArtifact]:

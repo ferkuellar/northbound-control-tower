@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -32,10 +32,14 @@ def generate_report(
 
 @router.get("", response_model=ReportListResponse)
 def get_reports(
+    tenant_id: uuid.UUID | None = Query(default=None),
     current_user: User = Depends(require_permission(Permission.REPORTS_READ)),
     db: Session = Depends(get_db),
 ) -> ReportListResponse:
-    items = list_reports(db, tenant_id=current_user.tenant_id)
+    scoped_tenant_id = tenant_id or current_user.tenant_id
+    if current_user.role != "ADMIN" and scoped_tenant_id != current_user.tenant_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Tenant access denied")
+    items = list_reports(db, tenant_id=scoped_tenant_id)
     return ReportListResponse(items=items, total=len(items))
 
 

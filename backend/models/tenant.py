@@ -26,5 +26,9 @@ class Tenant(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default=TenantStatus.ACTIVE.value, nullable=False)
+    industry: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    contact_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     users: Mapped[list["User"]] = relationship(back_populates="tenant")

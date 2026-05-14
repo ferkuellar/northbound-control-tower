@@ -12,6 +12,7 @@ from reports.enums import ReportFormat, ReportStatus, ReportType
 class ReportGenerateRequest(BaseModel):
     report_type: ReportType
     report_format: ReportFormat
+    tenant_id: uuid.UUID | None = None
     provider: str | None = Field(default=None, max_length=30)
     cloud_account_id: uuid.UUID | None = None
     branding: dict[str, Any] | None = None
