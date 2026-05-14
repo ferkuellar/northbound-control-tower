@@ -7,10 +7,10 @@
 | `nb findings list` | List findings for current tenant | VIEWER | LOW | Yes | `nb findings list --severity high` |
 | `nb findings show <finding_id>` | Show finding details | VIEWER | LOW | Yes | `nb findings show FIND-001` |
 | `nb fix suggest <finding_id>` | Suggest safe remediation approach | OPERATOR | MEDIUM | Yes | `nb fix suggest FIND-001` |
-| `nb fix plan <finding_id>` | Create draft request stub | OPERATOR | MEDIUM | Yes | `nb fix plan FIND-001` |
-| `nb requests list` | List draft request stubs | OPERATOR | LOW | Yes | `nb requests list` |
-| `nb requests show <request_id>` | Show request stub | OPERATOR | LOW | Yes | `nb requests show REQ-1001` |
-| `nb evidence show <request_id>` | Show request evidence stub | VIEWER | LOW | Yes | `nb evidence show REQ-1001` |
+| `nb fix plan <finding_id>` | Create persisted draft request | OPERATOR | MEDIUM | Yes | `nb fix plan FIND-001` |
+| `nb requests list` | List persisted draft requests | OPERATOR | LOW | Yes | `nb requests list` |
+| `nb requests show <request_id>` | Show persisted request | OPERATOR | LOW | Yes | `nb requests show REQ-1001` |
+| `nb evidence show <request_id>` | Show persisted request evidence | VIEWER | LOW | Yes | `nb evidence show REQ-1001` |
 | `nb terraform validate <request_id>` | Future Terraform validation | APPROVER | HIGH | No | `nb terraform validate REQ-1001` |
 | `nb terraform plan <request_id>` | Future Terraform plan | APPROVER | HIGH | No | `nb terraform plan REQ-1001` |
 | `nb terraform apply <request_id>` | Future controlled apply | APPROVER | CRITICAL | No | `nb terraform apply REQ-1001` |
@@ -37,4 +37,3 @@ Terraform Runner: Disabled
 Auto-remediation: Disabled
 Mode: Controlled Command Shell
 ```
-

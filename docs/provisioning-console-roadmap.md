@@ -24,6 +24,8 @@ Objective:
 - Prepare isolated workspace.
 - Continue blocking Terraform execution.
 
+Status: implemented as foundation. Requests and JSON artifacts are persisted; Terraform workspace creation remains future work.
+
 ## Phase C — Terraform Validate/Plan
 
 Objective:
@@ -78,4 +80,3 @@ Objective:
 - Link remediation evidence to reports.
 - Include before/after score impact.
 - Add executive and technical remediation appendix.
-

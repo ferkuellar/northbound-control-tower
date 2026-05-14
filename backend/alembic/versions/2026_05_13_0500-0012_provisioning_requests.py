@@ -1,0 +1,103 @@
+"""provisioning request workflow
+
+Revision ID: 0012_provisioning
+Revises: 0011_cloud_shell
+Create Date: 2026-05-13 05:00:00.000000
+"""
+
+from collections.abc import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy.dialects import postgresql
+
+revision: str = "0012_provisioning"
+down_revision: str | None = "0011_cloud_shell"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "provisioning_requests",
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("request_number", sa.String(length=40), nullable=False),
+        sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("cloud_account_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column("finding_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column("requested_by_user_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column("provider", sa.String(length=30), nullable=False),
+        sa.Column("template_key", sa.String(length=160), nullable=False),
+        sa.Column("template_version", sa.String(length=40), nullable=False),
+        sa.Column("status", sa.String(length=40), nullable=False),
+        sa.Column("risk_level", sa.String(length=20), nullable=False),
+        sa.Column("title", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.Text(), nullable=False),
+        sa.Column("input_variables", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("tfvars_json", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("workspace_path", sa.String(length=500), nullable=True),
+        sa.Column("evidence", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("approval_required", sa.Boolean(), nullable=False),
+        sa.Column("created_at_sequence", sa.Integer(), nullable=True),
+        sa.Column("submitted_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.ForeignKeyConstraint(["cloud_account_id"], ["cloud_accounts.id"]),
+        sa.ForeignKeyConstraint(["finding_id"], ["findings.id"]),
+        sa.ForeignKeyConstraint(["requested_by_user_id"], ["users.id"]),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"]),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("request_number", name="uq_provisioning_request_number"),
+    )
+    op.create_index(op.f("ix_provisioning_requests_cloud_account_id"), "provisioning_requests", ["cloud_account_id"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_finding_id"), "provisioning_requests", ["finding_id"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_provider"), "provisioning_requests", ["provider"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_requested_by_user_id"), "provisioning_requests", ["requested_by_user_id"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_request_number"), "provisioning_requests", ["request_number"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_risk_level"), "provisioning_requests", ["risk_level"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_status"), "provisioning_requests", ["status"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_template_key"), "provisioning_requests", ["template_key"], unique=False)
+    op.create_index(op.f("ix_provisioning_requests_tenant_id"), "provisioning_requests", ["tenant_id"], unique=False)
+
+    op.create_table(
+        "provisioning_artifacts",
+        sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("provisioning_request_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("artifact_type", sa.String(length=60), nullable=False),
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("content_json", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("storage_path", sa.String(length=500), nullable=True),
+        sa.Column("checksum", sa.String(length=128), nullable=True),
+        sa.Column("generated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.ForeignKeyConstraint(["provisioning_request_id"], ["provisioning_requests.id"]),
+        sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"]),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_provisioning_artifacts_artifact_type"), "provisioning_artifacts", ["artifact_type"], unique=False)
+    op.create_index(
+        op.f("ix_provisioning_artifacts_provisioning_request_id"),
+        "provisioning_artifacts",
+        ["provisioning_request_id"],
+        unique=False,
+    )
+    op.create_index(op.f("ix_provisioning_artifacts_tenant_id"), "provisioning_artifacts", ["tenant_id"], unique=False)
+
+
+def downgrade() -> None:
+    op.drop_index(op.f("ix_provisioning_artifacts_tenant_id"), table_name="provisioning_artifacts")
+    op.drop_index(op.f("ix_provisioning_artifacts_provisioning_request_id"), table_name="provisioning_artifacts")
+    op.drop_index(op.f("ix_provisioning_artifacts_artifact_type"), table_name="provisioning_artifacts")
+    op.drop_table("provisioning_artifacts")
+    op.drop_index(op.f("ix_provisioning_requests_tenant_id"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_template_key"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_status"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_risk_level"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_request_number"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_requested_by_user_id"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_provider"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_finding_id"), table_name="provisioning_requests")
+    op.drop_index(op.f("ix_provisioning_requests_cloud_account_id"), table_name="provisioning_requests")
+    op.drop_table("provisioning_requests")

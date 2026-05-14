@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 from cloud_shell.responses import ShellResponseBuilder
 from cloud_shell.schemas import ParsedCommand, ShellResponse, ShellUserContext
 from models.finding import Finding
-
-
-REQUEST_STORE: dict[str, dict[str, str]] = {}
+from models.user import User
+from provisioning.service import ProvisioningRequestService
+from provisioning.template_catalog import template_for_finding_type
 
 
 def _get_finding(db: Session, tenant_id: str | None, identifier: str) -> Finding | None:
@@ -23,15 +23,7 @@ def _get_finding(db: Session, tenant_id: str | None, identifier: str) -> Finding
 
 
 def _template_for(finding: Finding) -> str:
-    if finding.finding_type == "public_exposure":
-        return "cloud-public-exposure-review"
-    if finding.finding_type == "unattached_volume":
-        return "cloud-volume-snapshot-and-cleanup"
-    if finding.finding_type == "missing_tags":
-        return "cloud-tagging-governance"
-    if finding.finding_type == "observability_gap":
-        return "cloud-monitoring-baseline"
-    return f"{finding.provider}-{finding.finding_type}".replace("_", "-")
+    return template_for_finding_type(finding.finding_type, finding.provider).key
 
 
 class FixSuggestCommand:
@@ -73,27 +65,23 @@ class FixPlanCommand:
         if finding is None:
             return ShellResponseBuilder(parsed.command_name).with_status("error").line(f"Finding not found: {parsed.args[0]}").build()
 
-        request_id = f"REQ-{len(REQUEST_STORE) + 1001}"
-        REQUEST_STORE[request_id] = {
-            "request_id": request_id,
-            "finding_id": str(finding.id),
-            "template": _template_for(finding),
-            "status": "DRAFT",
-        }
+        current_user = db.get(User, uuid.UUID(str(user_context.user_id))) if user_context.user_id else None
+        request = ProvisioningRequestService(db).create_from_finding(finding=finding, current_user=current_user)
 
         return (
             ShellResponseBuilder(parsed.command_name)
             .line("Provisioning request created.")
             .line("")
-            .line(f"Request ID: {request_id}")
+            .line(f"Request ID: {request.request_number}")
             .line(f"Finding: {finding.id}")
-            .line(f"Template: {REQUEST_STORE[request_id]['template']}")
-            .line("Status: DRAFT")
+            .line(f"Template: {request.template_key}")
+            .line(f"Status: {request.status}")
             .line("Terraform execution: Disabled in this phase")
+            .line("Artifacts: request-input.json, terraform.tfvars.json, phase-b-evidence.json")
             .line("")
             .line("Next available command:")
-            .line(f"nb requests show {request_id}")
-            .meta("related_request_id", request_id)
+            .line(f"nb requests show {request.request_number}")
+            .meta("related_request_id", request.request_number)
+            .meta("related_finding_id", str(finding.id))
             .build()
         )
-

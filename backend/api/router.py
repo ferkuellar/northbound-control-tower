@@ -11,6 +11,7 @@ from api.routes import (
     findings,
     inventory,
     platform,
+    provisioning,
     reports,
     resources,
     scores,
@@ -34,3 +35,4 @@ api_router.include_router(ai.router, prefix="/ai", tags=["ai"])
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(platform.router, prefix="/platform", tags=["platform"])
+api_router.include_router(provisioning.router, prefix="/provisioning", tags=["provisioning"])
