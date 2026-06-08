@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict, deque
 from dataclasses import dataclass
+
+from core.redis import redis_client
 
 
 @dataclass(frozen=True)
@@ -11,20 +12,19 @@ class RateLimitDecision:
     retry_after: int
 
 
-class InMemoryRateLimiter:
-    def __init__(self) -> None:
-        self._buckets: dict[str, deque[float]] = defaultdict(deque)
-
+class RedisRateLimiter:
     def check(self, key: str, *, limit: int, window_seconds: int) -> RateLimitDecision:
-        now = time.monotonic()
-        bucket = self._buckets[key]
-        while bucket and now - bucket[0] >= window_seconds:
-            bucket.popleft()
-        if len(bucket) >= limit:
-            retry_after = max(1, int(window_seconds - (now - bucket[0])))
-            return RateLimitDecision(allowed=False, retry_after=retry_after)
-        bucket.append(now)
+        now_ms = int(time.time() * 1000)
+        window_ms = window_seconds * 1000
+        pipe = redis_client.pipeline()
+        pipe.zremrangebyscore(key, 0, now_ms - window_ms)
+        pipe.zadd(key, {str(now_ms): now_ms})
+        pipe.zcard(key)
+        pipe.expire(key, window_seconds + 1)
+        _, _, count, _ = pipe.execute()
+        if count > limit:
+            return RateLimitDecision(allowed=False, retry_after=window_seconds)
         return RateLimitDecision(allowed=True, retry_after=0)
 
 
-rate_limiter = InMemoryRateLimiter()
+rate_limiter = RedisRateLimiter()

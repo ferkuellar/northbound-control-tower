@@ -15,8 +15,20 @@ from observability.tracing import configure_tracing
 from security.headers import RequestValidationMiddleware, SecurityHeadersMiddleware
 
 
+_UNSAFE_JWT_SECRET = "change-me-only-for-local-development"
+
+
+def _validate_production_secrets() -> None:
+    if settings.app_env == "production" and settings.jwt_secret_key == _UNSAFE_JWT_SECRET:
+        raise RuntimeError(
+            "JWT_SECRET_KEY is the default insecure value. "
+            "Set a strong secret before running in production."
+        )
+
+
 def create_app() -> FastAPI:
     configure_logging()
+    _validate_production_secrets()
 
     app = FastAPI(
         title=settings.app_name,

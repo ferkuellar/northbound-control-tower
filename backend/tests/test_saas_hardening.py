@@ -11,7 +11,7 @@ from models.cloud_account import CloudAccount
 from models.resource import Resource
 from models.tenant import Tenant
 from models.user import User, UserRole
-from security.rate_limit import rate_limiter
+from core.redis import redis_client
 
 
 def _db_override() -> Generator:
@@ -163,7 +163,7 @@ def test_cloud_account_list_does_not_expose_secrets() -> None:
 
 
 def test_login_rate_limit_returns_429() -> None:
-    rate_limiter._buckets.clear()
+    redis_client.delete("login:ip:testclient")
     client = TestClient(app)
 
     for _ in range(5):
