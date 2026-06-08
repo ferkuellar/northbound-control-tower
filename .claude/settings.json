@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import sys,yaml; cfg=yaml.safe_load\\(sys.stdin\\); fe=cfg['services']['frontend']; print\\('command:', fe.get\\('command'\\)\\); print\\('volumes:', fe.get\\('volumes'\\)\\)\")"
+    ]
+  }
+}
