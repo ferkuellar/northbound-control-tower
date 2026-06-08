@@ -2,21 +2,32 @@ from __future__ import annotations
 
 from cloud_shell.command_registry import CommandDefinition, CommandRegistry
 from cloud_shell.enums import CloudShellRiskLevel
-from cloud_shell.services.disabled_service import DisabledFutureCommand
+from cloud_shell.services.approval_shell_service import ApprovalsListCommand, ApprovalsShowCommand, ApproveCommand, RejectCommand
 from cloud_shell.services.evidence_shell_service import EvidenceShowCommand
 from cloud_shell.services.findings_shell_service import FindingsListCommand, FindingsShowCommand
 from cloud_shell.services.fix_shell_service import FixPlanCommand, FixSuggestCommand
+from cloud_shell.services.cost_shell_service import CostEstimateCommand
+from cloud_shell.services.gates_shell_service import GatesEvaluateCommand
 from cloud_shell.services.help_service import HelpCommand
+from cloud_shell.services.outputs_shell_service import OutputsShowCommand
+from cloud_shell.services.remediation_report_shell_service import RemediationReportCommand
+from cloud_shell.services.rescan_shell_service import RescanAccountCommand
+from cloud_shell.services.risk_shell_service import RiskSummaryCommand
 from cloud_shell.services.request_shell_service import RequestsListCommand, RequestsShowCommand
+from cloud_shell.services.security_shell_service import SecurityScanCommand
 from cloud_shell.services.status_service import StatusCommand
 from cloud_shell.services.templates_shell_service import TemplatesListCommand, TemplatesShowCommand
-from cloud_shell.services.terraform_shell_service import TerraformApplyDisabledCommand, TerraformPlanCommand, TerraformValidateCommand
+from cloud_shell.services.terraform_shell_service import (
+    TerraformApplyCommand,
+    TerraformDestroyBlockedCommand,
+    TerraformPlanCommand,
+    TerraformValidateCommand,
+)
+from cloud_shell.services.validation_shell_service import ValidateFindingCommand, ValidateRequestCommand
 
 
 def build_default_registry() -> CommandRegistry:
     registry = CommandRegistry()
-    if registry.list():
-        return registry
 
     definitions = [
         CommandDefinition("nb", "help", None, "Show command help", "VIEWER", CloudShellRiskLevel.LOW, False, True, HelpCommand()),
@@ -144,36 +155,168 @@ def build_default_registry() -> CommandRegistry:
         ),
         CommandDefinition(
             "nb",
-            "terraform",
-            "apply",
-            "Future controlled Terraform apply",
+            "security",
+            "scan",
+            "Run Checkov security scan for a planned request",
             "OPERATOR",
-            CloudShellRiskLevel.CRITICAL,
-            True,
+            CloudShellRiskLevel.HIGH,
             False,
-            TerraformApplyDisabledCommand(),
+            True,
+            SecurityScanCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "cost",
+            "estimate",
+            "Run Infracost estimate for a planned request",
+            "OPERATOR",
+            CloudShellRiskLevel.MEDIUM,
+            False,
+            True,
+            CostEstimateCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "risk",
+            "summary",
+            "Generate request risk summary",
+            "OPERATOR",
+            CloudShellRiskLevel.MEDIUM,
+            False,
+            True,
+            RiskSummaryCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "gates",
+            "evaluate",
+            "Evaluate policy gates for a planned request",
+            "OPERATOR",
+            CloudShellRiskLevel.HIGH,
+            False,
+            True,
+            GatesEvaluateCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "approvals",
+            "list",
+            "List provisioning requests waiting for approval",
+            "APPROVER",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            ApprovalsListCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "approvals",
+            "show",
+            "Show approval detail for a provisioning request",
+            "APPROVER",
+            CloudShellRiskLevel.LOW,
+            False,
+            True,
+            ApprovalsShowCommand(),
         ),
         CommandDefinition(
             "nb",
             "approve",
             None,
-            "Future approval command",
+            "Approve a provisioning request",
             "APPROVER",
             CloudShellRiskLevel.HIGH,
             True,
+            True,
+            ApproveCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "reject",
+            None,
+            "Reject a provisioning request",
+            "APPROVER",
+            CloudShellRiskLevel.HIGH,
+            True,
+            True,
+            RejectCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "terraform",
+            "apply",
+            "Controlled Terraform apply",
+            "OPERATOR",
+            CloudShellRiskLevel.CRITICAL,
+            True,
+            True,
+            TerraformApplyCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "outputs",
+            "show",
+            "Show Terraform outputs for an applied request",
+            "VIEWER",
+            CloudShellRiskLevel.LOW,
             False,
-            DisabledFutureCommand(),
+            True,
+            OutputsShowCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "terraform",
+            "destroy",
+            "Blocked Terraform destroy command",
+            "OPERATOR",
+            CloudShellRiskLevel.CRITICAL,
+            True,
+            True,
+            TerraformDestroyBlockedCommand(),
         ),
         CommandDefinition(
             "nb",
             "validate",
-            None,
-            "Future post-remediation validation",
+            "request",
+            "Run post-remediation validation for a request",
+            "OPERATOR",
+            CloudShellRiskLevel.HIGH,
+            False,
+            True,
+            ValidateRequestCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "validate",
+            "finding",
+            "Run post-remediation validation for a finding",
+            "OPERATOR",
+            CloudShellRiskLevel.HIGH,
+            False,
+            True,
+            ValidateFindingCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "rescan",
+            "account",
+            "Run read-only collector rescan for a cloud account",
             "OPERATOR",
             CloudShellRiskLevel.MEDIUM,
             False,
+            True,
+            RescanAccountCommand(),
+        ),
+        CommandDefinition(
+            "nb",
+            "remediation",
+            "report",
+            "Show remediation final report",
+            "VIEWER",
+            CloudShellRiskLevel.LOW,
             False,
-            DisabledFutureCommand(),
+            True,
+            RemediationReportCommand(),
         ),
     ]
     for definition in definitions:

@@ -45,7 +45,7 @@ def test_command_parser_rejects_bash_and_destroy() -> None:
             raise AssertionError(f"Command should be rejected: {command}")
 
 
-def test_command_registry_finds_valid_and_marks_disabled() -> None:
+def test_command_registry_finds_valid_commands() -> None:
     registry = build_default_registry()
 
     status = registry.get(CommandParser().parse("nb status"))
@@ -54,7 +54,7 @@ def test_command_registry_finds_valid_and_marks_disabled() -> None:
 
     assert status.enabled is True
     assert terraform.enabled is True
-    assert apply.enabled is False
+    assert apply.enabled is True
 
 
 def test_authorization_role_mapping() -> None:

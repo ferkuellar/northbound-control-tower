@@ -90,6 +90,10 @@ class ProvisioningArtifactService:
         payload: dict[str, Any],
         created_by_user_id: str | None = None,
     ) -> ProvisioningArtifact:
+        resolved_path = path.resolve()
+        resolved_root = workspace_root.resolve()
+        if not resolved_path.is_relative_to(resolved_root):
+            raise ValueError("Artifact path must stay inside the Terraform workspace.")
         sanitized = sanitize_json(payload)
         path.write_text(json.dumps(sanitized, indent=2, sort_keys=True), encoding="utf-8")
         return self.create_file_artifact(

@@ -15,10 +15,21 @@
 | `nb evidence show <request_id>` | Show request evidence and artifacts | VIEWER | LOW | Yes | `nb evidence show REQ-1001` |
 | `nb terraform validate <request_id>` | Prepare workspace, run Terraform init and validate | OPERATOR | HIGH | Yes | `nb terraform validate REQ-1001` |
 | `nb terraform plan <request_id>` | Run Terraform plan and convert plan to JSON | OPERATOR | HIGH | Yes | `nb terraform plan REQ-1001` |
-| `nb terraform apply <request_id>` | Future controlled apply | OPERATOR | CRITICAL | No | `nb terraform apply REQ-1001` |
+| `nb security scan <request_id>` | Run Checkov scan against the Terraform workspace | OPERATOR | HIGH | Yes | `nb security scan REQ-1001` |
+| `nb cost estimate <request_id>` | Run Infracost estimate for the Terraform workspace | OPERATOR | MEDIUM | Yes | `nb cost estimate REQ-1001` |
+| `nb risk summary <request_id>` | Generate JSON and Markdown risk summary | OPERATOR | MEDIUM | Yes | `nb risk summary REQ-1001` |
+| `nb gates evaluate <request_id>` | Evaluate policy gates and set gate decision | OPERATOR | HIGH | Yes | `nb gates evaluate REQ-1001` |
+| `nb approvals list` | List provisioning requests waiting for approval | APPROVER | LOW | Yes | `nb approvals list` |
+| `nb approvals show <request_id>` | Show approval detail for a request | APPROVER | LOW | Yes | `nb approvals show REQ-1001` |
+| `nb approve <request_id> --note "..."` | Approve a request after review | APPROVER | HIGH | Yes | `nb approve REQ-1001 --note "Reviewed security, cost and gates"` |
+| `nb reject <request_id> --note "..."` | Reject a request with reason | APPROVER | HIGH | Yes | `nb reject REQ-1001 --note "Cost too high"` |
+| `nb terraform apply <request_id>` | Apply the approved immutable Terraform plan | OPERATOR | CRITICAL | Yes | `nb terraform apply REQ-1001` |
+| `nb outputs show <request_id>` | Show captured Terraform outputs with sensitive values redacted | VIEWER | LOW | Yes | `nb outputs show REQ-1001` |
+| `nb validate request <request_id>` | Run post-remediation validation after apply | OPERATOR | HIGH | Yes | `nb validate request REQ-1001` |
+| `nb validate finding <finding_id>` | Run post-remediation validation for the applied request tied to a finding | OPERATOR | HIGH | Yes | `nb validate finding FIND-001` |
+| `nb rescan account <account_id>` | Run read-only collector rescan for a cloud account | OPERATOR | MEDIUM | Yes | `nb rescan account AWS-PROD-001` |
+| `nb remediation report <request_id>` | Show final remediation report | VIEWER | LOW | Yes | `nb remediation report REQ-1001` |
 | `nb terraform destroy <request_id>` | Destructive Terraform command | N/A | CRITICAL | Blocked | `nb terraform destroy REQ-1001` |
-| `nb approve <request_id>` | Future approval command | APPROVER | HIGH | No | `nb approve REQ-1001` |
-| `nb validate <finding_id>` | Future post-remediation validation | OPERATOR | MEDIUM | No | `nb validate FIND-001` |
 
 ## Terraform Validate Output
 
@@ -37,15 +48,37 @@ Status:
 TERRAFORM_VALIDATE_SUCCEEDED
 ```
 
-## Terraform Apply Disabled Output
+## Terraform Apply Blocked Output
 
 ```text
-Command recognized but disabled in this phase.
-Reason: Terraform apply requires approval workflow, security gates, cost review and controlled execution policy.
+Apply blocked for REQ-1001.
+
+Reason:
+Request status must be APPROVED, current status is READY_FOR_APPROVAL
+
+No infrastructure changes were executed.
 ```
 
 ## Terraform Destroy Blocked Output
 
 ```text
-Command blocked. Only Northbound controlled commands are allowed.
+Command blocked. Terraform destroy is not available from Northbound Cloud Shell.
+```
+
+## Phase D Command Flow
+
+```text
+nb terraform plan REQ-1001
+nb security scan REQ-1001
+nb cost estimate REQ-1001
+nb risk summary REQ-1001
+nb gates evaluate REQ-1001
+nb approvals list
+nb approvals show REQ-1001
+nb approve REQ-1001 --note "Reviewed security, cost and gates"
+nb terraform apply REQ-1001
+nb outputs show REQ-1001
+nb validate request REQ-1001
+nb remediation report REQ-1001
+nb evidence show REQ-1001
 ```

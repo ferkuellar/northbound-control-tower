@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 class UserRole(StrEnum):
     ADMIN = "ADMIN"
+    APPROVER = "APPROVER"
     ANALYST = "ANALYST"
     VIEWER = "VIEWER"
 

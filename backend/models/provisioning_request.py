@@ -63,3 +63,109 @@ class ProvisioningArtifact(Base, TimestampMixin):
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     request: Mapped["ProvisioningRequest"] = relationship()
+
+
+class ProvisioningApproval(Base, TimestampMixin):
+    __tablename__ = "provisioning_approvals"
+    __table_args__ = (UniqueConstraint("approval_code", name="uq_provisioning_approval_code"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    approval_code: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    request_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("provisioning_requests.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True, index=True)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    cloud_account_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("cloud_accounts.id"), nullable=True, index=True)
+    requested_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    decision: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING", index=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING", index=True)
+    approval_level: Mapped[str] = mapped_column(String(30), nullable=False, default="STANDARD")
+    environment: Mapped[str] = mapped_column(String(80), nullable=False, default="unknown")
+    risk_level: Mapped[str] = mapped_column(String(20), nullable=False)
+    requires_double_approval: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    approval_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    risk_summary_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    gates_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    cost_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    security_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    plan_summary_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    approved_plan_checksum_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_plan_json_checksum_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_risk_summary_checksum_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_gates_result_checksum_sha256: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    request: Mapped["ProvisioningRequest"] = relationship()
+
+
+class ProvisioningExecutionLock(Base, TimestampMixin):
+    __tablename__ = "provisioning_execution_locks"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    request_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("provisioning_requests.id"), nullable=False, index=True)
+    lock_token: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    locked_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    locked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    request: Mapped["ProvisioningRequest"] = relationship()
+
+
+class CollectorRun(Base, TimestampMixin):
+    __tablename__ = "collector_runs"
+    __table_args__ = (UniqueConstraint("collector_run_code", name="uq_collector_run_code"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    collector_run_code: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    cloud_account_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("cloud_accounts.id"), nullable=False, index=True)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True, index=True)
+    provider: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    region: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    triggered_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    trigger_source: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    resources_collected_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    findings_generated_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+
+
+class PostRemediationValidation(Base, TimestampMixin):
+    __tablename__ = "post_remediation_validations"
+    __table_args__ = (UniqueConstraint("validation_code", name="uq_post_remediation_validation_code"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    validation_code: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    request_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("provisioning_requests.id"), nullable=False, index=True)
+    finding_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("findings.id"), nullable=True, index=True)
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True, index=True)
+    client_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    cloud_account_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("cloud_accounts.id"), nullable=True, index=True)
+    provider: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    region: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    environment: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    status: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    result: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    validated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)
+    collector_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("collector_runs.id"), nullable=True, index=True)
+    before_finding_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    after_finding_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    inventory_snapshot_before_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    inventory_snapshot_after_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    findings_diff_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    validation_checks_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list, nullable=False)
+    evidence_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    request: Mapped["ProvisioningRequest"] = relationship()
