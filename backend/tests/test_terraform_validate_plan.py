@@ -5,6 +5,7 @@ import subprocess
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,7 @@ from provisioning.artifact_service import ProvisioningArtifactService, sanitize_
 from provisioning.enums import ProvisioningArtifactType, ProvisioningRequestStatus
 from provisioning.template_catalog import get_phase_c_execution_template
 from provisioning.terraform_plan_parser import TerraformPlanParser
+from provisioning.policy_gates import BLOCKED, PASS, PolicyGateEngine
 from provisioning.terraform_runner import TERRAFORM_NOT_FOUND, TerraformRunner
 from provisioning.terraform_workspace import TerraformWorkspaceManager
 
@@ -224,3 +226,30 @@ def test_secret_sanitizer_redacts_sensitive_values() -> None:
     assert "abc123" not in sanitized
     assert "supersecret" not in sanitized
     assert "[REDACTED]" in sanitized
+
+
+def test_apply_gate_blocked_when_flag_is_false(monkeypatch) -> None:
+    monkeypatch.setattr("provisioning.policy_gates.settings", SimpleNamespace(terraform_apply_enabled=False))
+    engine = PolicyGateEngine(MagicMock())
+
+    result = engine._apply_enabled()
+
+    assert result["result"] == BLOCKED
+    assert "TERRAFORM_APPLY_ENABLED=true" in result["message"]
+
+
+def test_apply_gate_blocked_by_default(monkeypatch) -> None:
+    # Verifies the real default is False by checking the flag without explicit override.
+    import provisioning.policy_gates as pg
+    original = pg.settings.terraform_apply_enabled
+    assert original is False, "terraform_apply_enabled default must be False"
+
+
+def test_apply_gate_passes_when_flag_is_true(monkeypatch) -> None:
+    monkeypatch.setattr("provisioning.policy_gates.settings", SimpleNamespace(terraform_apply_enabled=True))
+    engine = PolicyGateEngine(MagicMock())
+
+    result = engine._apply_enabled()
+
+    assert result["result"] == PASS
+    assert result["message"] == "Apply is enabled"

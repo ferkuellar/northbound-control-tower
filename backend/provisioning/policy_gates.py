@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from core.config import settings
 from models.provisioning_request import ProvisioningRequest
 from provisioning.artifact_service import ProvisioningArtifactService
 from provisioning.enums import ProvisioningArtifactType, ProvisioningRequestStatus
@@ -40,7 +41,7 @@ class PolicyGateEngine:
         gates = [
             self._request_not_cancelled(original_status),
             self._template_enabled(request),
-            self._apply_disabled(),
+            self._apply_enabled(),
         ]
         workspace_path: Path | None = None
         plan_summary: dict[str, Any] | None = None
@@ -105,8 +106,14 @@ class PolicyGateEngine:
             return self._gate("template_enabled", BLOCKED, "Terraform execution template is disabled")
         return self._gate("template_enabled", PASS, "Terraform execution template is enabled")
 
-    def _apply_disabled(self) -> dict[str, str]:
-        return self._gate("apply_disabled", PASS, "Terraform apply remains disabled in Phase D")
+    def _apply_enabled(self) -> dict[str, str]:
+        if not settings.terraform_apply_enabled:
+            return self._gate(
+                "apply_enabled",
+                BLOCKED,
+                "Terraform apply is disabled. Set TERRAFORM_APPLY_ENABLED=true.",
+            )
+        return self._gate("apply_enabled", PASS, "Apply is enabled")
 
     def _plan_exists(self, workspace_path: Path) -> dict[str, str]:
         if (workspace_path / "plan.json").is_file():
