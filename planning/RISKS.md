@@ -41,6 +41,34 @@
 
 ---
 
+## RISK-004 — Inventory scans show nb-svc-scan until callers pass user_id
+
+**Severity:** Low
+**Likelihood:** N/A (accepted limitation)
+**Status:** Tracked — known gap, not a security risk
+
+**Description:** `AWSInventoryCollector` instantiates `AWSSessionFactory` without a `user_id`. All scan-triggered assume-role calls appear as `nb-svc-scan` in customer CloudTrail. This limits per-user attribution in the customer's audit trail for inventory operations.
+
+**Mitigation applied:** `AWSSessionFactory` accepts optional `user_id` and `operation` parameters. Service-initiated calls default to `svc`.
+
+**Residual risk:** Customer cannot distinguish which internal user triggered a scan unless the caller propagates `user_id` to the factory.
+
+**Recommended next control:** When scan API endpoints are added, propagate the authenticated user's `user_id` to `AWSInventoryCollector` → `AWSSessionFactory`.
+
+---
+
+## RISK-005 — Terraform apply path does not yet use AWSSessionFactory
+
+**Severity:** Medium
+**Likelihood:** N/A (current architecture)
+**Status:** Tracked — architecture gap for future sprint
+
+**Description:** `TerraformApplyService` runs `terraform apply` via subprocess with a locked-down `PATH`-only env. It does not call `sts.assume_role()`. When the provisioning layer evolves to make direct AWS API calls (e.g., post-apply validation, rescan), it will need to call `AWSSessionFactory` with `operation=f"apply-{request.request_number}"` for full CloudTrail traceability.
+
+**Recommended next control:** When provisioning services add direct AWS SDK calls, use `AWSSessionFactory(account, user_id=..., operation=f"apply-{request.request_number}")`.
+
+---
+
 ## RISK-003 — Terraform apply surface not gated at command level
 
 **Severity:** High

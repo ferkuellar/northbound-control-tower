@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import boto3
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
@@ -7,11 +9,35 @@ from botocore.exceptions import BotoCoreError, ClientError
 from models.cloud_account import CloudAccount, CloudAccountAuthType
 from security.encryption import decrypt_credential
 
+# Characters valid in AWS RoleSessionName: alphanumeric plus =,.@-_
+_INVALID_SESSION_CHARS = re.compile(r"[^\w=,.@\-]")
+
+
+def build_role_session_name(
+    *,
+    user_id: str | None = None,
+    operation: str = "scan",
+    request_number: str | None = None,
+) -> str:
+    actor = str(user_id or "svc")[:8]
+    safe_operation = operation.replace("_", "-")[:24]
+    name = f"nb-{actor}-{safe_operation}-{request_number}" if request_number else f"nb-{actor}-{safe_operation}"
+    return _INVALID_SESSION_CHARS.sub("", name)[:64]
+
 
 class AWSSessionFactory:
-    def __init__(self, cloud_account: CloudAccount, *, timeout_seconds: int) -> None:
+    def __init__(
+        self,
+        cloud_account: CloudAccount,
+        *,
+        timeout_seconds: int,
+        user_id: str | None = None,
+        operation: str = "scan",
+    ) -> None:
         self.cloud_account = cloud_account
         self.timeout_seconds = timeout_seconds
+        self.user_id = user_id
+        self.operation = operation
 
     def create_session(self) -> boto3.Session:
         auth_type = CloudAccountAuthType(self.cloud_account.auth_type)
@@ -26,7 +52,7 @@ class AWSSessionFactory:
             sts_client = base_session.client("sts", config=self.client_config())
             assume_role_args = {
                 "RoleArn": self.cloud_account.role_arn,
-                "RoleSessionName": "northbound-control-tower-inventory",
+                "RoleSessionName": build_role_session_name(user_id=self.user_id, operation=self.operation),
             }
             if self.cloud_account.external_id:
                 assume_role_args["ExternalId"] = self.cloud_account.external_id

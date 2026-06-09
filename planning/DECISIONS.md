@@ -22,6 +22,28 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-004 — AWS RoleSessionName must be traceable
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+The prior `RoleSessionName` was the hardcoded string `"northbound-control-tower-inventory"` for all assume-role operations. When multiple accounts or operations share the same session name, CloudTrail records in the customer's account are indistinguishable — an auditor cannot determine which operation triggered which API call or which internal user initiated it.
+
+### Decision
+
+All assume-role calls use `build_role_session_name()` which produces `nb-{actor[:8]}-{operation}` (or with `request_number` for apply operations). The actor is the first 8 chars of the internal `user_id`, or `svc` for service-initiated operations. Generic hardcoded session names are prohibited.
+
+### Consequences
+
+- Customer CloudTrail records show `nb-a1b2c3d4-scan` or `nb-svc-scan` in the assumed-role ARN.
+- The actor segment is a short opaque identifier (not email, not full UUID) — minimal PII exposure while maintaining internal traceability via `user_id` lookup.
+- Inventory collectors currently default to `nb-svc-scan` because `AWSInventoryCollector` does not yet receive a `user_id`. When triggered by a user API call, callers may pass `user_id` to `AWSSessionFactory` to get per-user attribution.
+- Apply operations must pass `request_number` via `operation=f"apply-{request.request_number}"` when the provisioning layer integrates cloud sessions (future sprint).
+
+---
+
 ## ADR-003 — CORS request headers must be explicitly allowlisted
 
 **Date:** 2026-06-08

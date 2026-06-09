@@ -23,6 +23,11 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**Traceable AWS role session names** (`security: add traceable aws role session names`)
+- `collectors/aws/session.py` — `build_role_session_name()` helper; `AWSSessionFactory` accepts `user_id` and `operation`; hardcoded `"northbound-control-tower-inventory"` eliminated
+- `tests/test_aws_session.py` — 13 tests (helper formats, assume_role mock, defensive check)
+- Result: 178 passed
+
 **CORS header allowlist** (`security: replace wildcard cors headers with explicit allowlist`)
 - `api/main.py` — `allow_headers=["*"]` replaced with explicit list (Authorization, Content-Type, X-Tenant-ID, X-Request-ID, Accept)
 - `tests/test_saas_hardening.py` — 6 CORS preflight tests added
@@ -44,7 +49,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **165 passed** as of 2026-06-08
+- **178 passed** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
