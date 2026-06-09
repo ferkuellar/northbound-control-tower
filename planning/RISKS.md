@@ -69,6 +69,26 @@
 
 ---
 
+## RISK-008 — Seed demo data must not reach production environments
+
+**Severity:** Medium
+**Likelihood:** Low (requires manual execution in the wrong environment)
+**Status:** Active — requires operational discipline
+
+**Description:** `scripts/seed_demo_data.py` creates a demo tenant with a known password (`DemoPass123!`), a fictitious AWS account ARN, and synthetic resources/findings/scores. If executed against a production database, it would create a backdoor admin account and pollute operational data.
+
+**Mitigation applied:**
+- Script docstring explicitly prohibits production use.
+- `DemoPass123!` is not a valid or useful production credential.
+- Script is excluded from startup automation.
+- Password is documented as demo-only throughout the codebase.
+
+**Residual risk:** No technical guard prevents running the script against a production DATABASE_URL. Operational process must ensure the script is only run in local/dev/demo environments.
+
+**Recommended next control:** Add a guard at script startup that checks `APP_ENV` and refuses to run if `APP_ENV=production`.
+
+---
+
 ## RISK-007 — Celery worker healthcheck does not validate end-to-end task execution
 
 **Severity:** Low

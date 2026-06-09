@@ -55,6 +55,13 @@ _Last updated: 2026-06-09_
 - `tests/test_saas_hardening.py` — 6 CORS preflight tests added
 - Result: 165 passed
 
+**AI demo seed data script** (`ai: add demo seed data script for ai context testing`)
+- `backend/scripts/seed_demo_data.py` — creado; tenant, user, cloud account, 2 resources, 3 findings, 3 scores
+- `backend/tests/test_seed_demo_data.py` — 7 tests (tenant, user, password hash, resources, findings, scores, collision)
+- Diferencias vs guía: `Finding.rule_id` requerido; `CloudScore.summary` requerido; sin `formula_version`/`findings_count`/`weights_used`/`domain_scores`
+- ADR-011, RISK-008 documentados
+- Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
+
 **Celery worker Docker healthcheck** (`infra: add celery worker healthcheck`)
 - `docker-compose.yml` — `healthcheck` agregado al servicio `worker` usando `celery inspect ping`
 - Verificado: `docker compose config` ✅, worker muestra `(healthy)` en `docker compose ps`

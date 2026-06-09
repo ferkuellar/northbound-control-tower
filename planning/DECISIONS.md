@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## ADR-011 — AI demos require seeded context data; empty database must not be used for provider quality evaluation
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`AIContextBuilder` reads Tenant, CloudAccount, Resource, Finding, and CloudScore from the database. With an empty database, the AI context carries zero resources, zero findings, and no scores. Claude produces low-value analysis against empty context, `validate_ai_output()` may reject the output for missing limitation signals, and test results for `/api/v1/ai/analyze` are misleading.
+
+### Decision
+
+A `scripts/seed_demo_data.py` script provides minimal but realistic demo context for local AI testing. The script is idempotent across multiple runs via per-run unique slugs and emails. It must never be run against production environments and must never be treated as production data.
+
+### Consequences
+
+- Claude smoke tests and end-to-end demos run against realistic multi-finding, multi-score context.
+- Each `seed()` call creates an independent demo tenant, so multiple demo datasets can coexist.
+- The script does not modify migrations, models, or production configuration.
+
+---
+
 ## ADR-010 — All long-running worker services must include Docker healthchecks
 
 **Date:** 2026-06-09
