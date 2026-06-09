@@ -8,6 +8,7 @@ from sqlalchemy import select
 from auth.security import decode_access_token
 from cloud_shell.command_executor import CloudShellExecutor
 from cloud_shell.schemas import ShellUserContext
+from core.config import settings
 from core.database import SessionLocal
 from models.user import User
 
@@ -46,6 +47,10 @@ def _authenticate_websocket(websocket: WebSocket, db) -> User | None:
 @router.websocket("/ws/cloud-shell")
 async def cloud_shell_websocket(websocket: WebSocket) -> None:
     await websocket.accept(subprotocol="northbound")
+    if not settings.cloud_shell_enabled:
+        await websocket.send_json({"status": "error", "output": "Cloud Shell is disabled. Set CLOUD_SHELL_ENABLED=true.", "metadata": {}})
+        await websocket.close(code=1008)
+        return
     db = SessionLocal()
     try:
         user = _authenticate_websocket(websocket, db)

@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     jwt_access_token_expire_minutes: int = Field(default=60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
     terraform_apply_enabled: bool = Field(default=False, alias="TERRAFORM_APPLY_ENABLED")
+    cloud_shell_enabled: bool = Field(default=False, alias="CLOUD_SHELL_ENABLED")
     credential_encryption_key: str | None = Field(default=None, alias="CREDENTIAL_ENCRYPTION_KEY")
     aws_default_region: str = Field(default="us-east-1", alias="AWS_DEFAULT_REGION")
     aws_scan_timeout_seconds: int = Field(default=300, alias="AWS_SCAN_TIMEOUT_SECONDS")

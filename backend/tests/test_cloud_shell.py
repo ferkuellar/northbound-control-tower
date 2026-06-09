@@ -1,5 +1,8 @@
 import uuid
+from types import SimpleNamespace
 
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from cloud_shell.authorization import CloudShellAuthorizationService
@@ -199,3 +202,63 @@ def test_requests_show_reads_persisted_request() -> None:
         assert "terraform.tfvars.json" in evidence_response.output
     finally:
         db.close()
+
+
+# ── Feature flag tests ────────────────────────────────────────────────────────
+
+def _make_shell_app() -> FastAPI:
+    from cloud_shell.router import router as cloud_shell_router
+    app = FastAPI()
+    app.include_router(cloud_shell_router)
+    return app
+
+
+def test_cloud_shell_disabled_by_default(monkeypatch) -> None:
+    monkeypatch.setattr("cloud_shell.router.settings", SimpleNamespace(cloud_shell_enabled=False))
+    client = TestClient(_make_shell_app())
+    with client.websocket_connect("/ws/cloud-shell") as ws:
+        data = ws.receive_json()
+        assert data["status"] == "error"
+        assert "Cloud Shell is disabled. Set CLOUD_SHELL_ENABLED=true." in data["output"]
+
+
+def test_cloud_shell_disabled_explicit_false(monkeypatch) -> None:
+    monkeypatch.setattr("cloud_shell.router.settings", SimpleNamespace(cloud_shell_enabled=False))
+    client = TestClient(_make_shell_app())
+    with client.websocket_connect("/ws/cloud-shell") as ws:
+        data = ws.receive_json()
+        assert data["status"] == "error"
+        assert "CLOUD_SHELL_ENABLED=true" in data["output"]
+
+
+def test_cloud_shell_disabled_executor_not_invoked(monkeypatch) -> None:
+    executor_called = []
+
+    class SpyExecutor:
+        def execute(self, *args, **kwargs):
+            executor_called.append(True)
+
+    monkeypatch.setattr("cloud_shell.router.settings", SimpleNamespace(cloud_shell_enabled=False))
+    monkeypatch.setattr("cloud_shell.router.CloudShellExecutor", lambda: SpyExecutor())
+    client = TestClient(_make_shell_app())
+    with client.websocket_connect("/ws/cloud-shell") as ws:
+        ws.receive_json()  # consume the disabled error
+
+    assert executor_called == [], "Executor must not be invoked when Cloud Shell is disabled"
+
+
+def test_cloud_shell_enabled_proceeds_to_auth(monkeypatch) -> None:
+    monkeypatch.setattr("cloud_shell.router.settings", SimpleNamespace(cloud_shell_enabled=True))
+    client = TestClient(_make_shell_app())
+    with client.websocket_connect("/ws/cloud-shell") as ws:
+        data = ws.receive_json()
+        # Flag is enabled — the disabled message must NOT appear; auth rejection fires instead
+        assert "Cloud Shell is disabled" not in data.get("output", "")
+        assert data["status"] == "error"
+        assert "Authentication required" in data["output"]
+
+
+def test_cloud_shell_default_settings_flag_is_false() -> None:
+    from core.config import Settings
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.cloud_shell_enabled is False
