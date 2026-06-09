@@ -22,6 +22,27 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-006 — ClaudeProvider must use a system message requiring JSON-only responses
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+Without a `system` message, Claude may wrap JSON in markdown fences, add preamble text, or include explanations outside the JSON object. When this happens, `parse_ai_output()` cannot recover the structured fields (`executive_summary`, `technical_assessment`, etc.) and degrades the response to `{"analysis_text": "..."}`, breaking UI, reports, dashboards and validators.
+
+### Decision
+
+`ClaudeProvider.generate_analysis()` sends a `system` message that explicitly requires valid JSON only, prohibits markdown fences and preamble, requires the entire response to be parseable by `json.loads()`, and prohibits inventing data not present in the provided context.
+
+### Consequences
+
+- The probability of unstructured or markdown-wrapped responses is significantly reduced.
+- The system message does not guarantee 100% compliance; output validation remains necessary.
+- The prompt text is currently inline in `claude.py`. A future sprint should move it to `ai/prompts.py` to be versioned alongside prompt schemas.
+
+---
+
 ## ADR-005 — Claude model defaults must be current and environment-overridable
 
 **Date:** 2026-06-08

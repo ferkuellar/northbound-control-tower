@@ -23,6 +23,11 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**Claude provider JSON-only system message** (`ai: force claude provider to return json only`)
+- `ai/providers/claude.py` — `system=` message agregado a `client.messages.create()`
+- `tests/test_claude_provider.py` — creado, 8 tests (system presence, content, params, text extraction, non-text blocks, missing key)
+- Result: 189 passed
+
 **Claude model default updated** (`ai: update default claude model configuration`)
 - `core/config.py` — `claude_model` default: `claude-3-5-sonnet-latest` → `claude-sonnet-4-6`
 - `.env.example` — `CLAUDE_MODEL` alineado al mismo valor
@@ -55,7 +60,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **181 passed** as of 2026-06-08
+- **189 passed** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
