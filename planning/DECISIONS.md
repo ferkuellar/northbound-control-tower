@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## ADR-014 — Prompt iteration must use measurable evaluation criteria with an objective stop condition
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+Prompt quality was evaluated subjectively ("se ve bien", "suena profesional"). Without measurable criteria, prompt iteration has no objective stop condition and cannot be validated across context changes, model updates, or regressions.
+
+### Decision
+
+`scripts/test_prompts.py` provides a deterministic evaluator for AI outputs. The first supported evaluator is `executive_summary` with 13 checks covering structure, executive tone, jargon absence, business risk presence, domain highlights, and actionable recommendations. The evaluator always emits exactly 13 criteria — incomplete outputs cause failing criteria, not missing ones. The stop criterion is 13/13 passing across at least two different contexts.
+
+### Consequences
+
+- Prompt changes have a measurable acceptance bar instead of subjective sign-off.
+- `--strict` flag enables CI integration when the team is ready.
+- The evaluator checks structure and heuristics, not factual correctness — it must be paired with source-context validation and human review for enterprise reports.
+- Other analysis types (`technical_assessment`, `remediation_recommendations`, `full_assessment`) need their own evaluators in future sprints.
+
+---
+
 ## ADR-013 — AI prompts that feed structured UI/reporting must use explicit JSON schemas and versioned definitions
 
 **Date:** 2026-06-09

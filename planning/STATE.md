@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-09 (prompt schema sprint)_
+_Last updated: 2026-06-08 (prompt evaluator sprint)_
 
 ## Completed
 
@@ -62,6 +62,12 @@ _Last updated: 2026-06-09 (prompt schema sprint)_
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
 
+**Measurable prompt evaluation script** (`ai: add measurable prompt evaluation script`)
+- `scripts/test_prompts.py` — created; `check_executive_summary()` returning stable 13 criteria; `evaluate()` dispatcher; `main()` CLI with `--type`, `--file`, `--save`, `--strict`
+- `tests/test_test_prompts.py` — created; 24 tests (criterion count stability, valid output 13/13, individual failures, incomplete output never skips criteria, CLI --file, CLI --strict)
+- ADR-014, RISK-011 documented
+- Result: 294 passed, 3 skipped
+
 **AI executive summary prompt schema** (`ai: add explicit executive summary prompt schema`)
 - `ai/prompts.py` — `PROMPT_VERSION` → `"phase9-v1.1"`; `SYSTEM_PROMPT` (Principal Cloud Architect, CISO/CFO, JSON-only, safety rules); `EXECUTIVE_SUMMARY_SCHEMA` (fixed 6-section structure); `EXECUTIVE_SUMMARY_EXAMPLE` (few-shot, fictitious, do-not-copy warning); `executive_summary_prompt()` rebuilt to include schema + example + version
 - `ai/providers/claude.py` — imports and uses `SYSTEM_PROMPT` from `ai.prompts`; hardcoded system string removed
@@ -109,10 +115,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **270 passed, 3 skipped** as of 2026-06-09 (prompt schema sprint)
+- **294 passed, 3 skipped** as of 2026-06-08 (prompt evaluator sprint)
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), and RISK-010 (prompt truncation) are tracked open.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), and RISK-011 (evaluator structural only, not factual) are tracked open.

@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-011 — Prompt evaluator checks structure and heuristics, not factual correctness
+
+**Severity:** Medium
+**Likelihood:** Medium (any time context data is sparse or wrong)
+**Status:** Active — accepted for this phase
+
+**Description:** `scripts/test_prompts.py` verifies that the AI output has the required structure, risk levels from a valid set, minimum text lengths, absence of technical jargon in `one_line`, non-empty risk lists, numeric scores, and the presence of `risk_if_skipped`. It does not verify that the values are factually correct relative to the source context. A response can pass 13/13 while containing invented resources, wrong scores, or fabricated risks — as long as the shape and length heuristics are satisfied.
+
+**Mitigation applied:**
+- `SYSTEM_PROMPT` and prompt rules explicitly prohibit inventing data not present in the provided context.
+- `validate_ai_output()` in `ai/validators.py` checks for limitation signals when resources are unavailable.
+- The evaluator is documented as a structural check, not a factual validation.
+
+**Residual risk:** 13/13 is a necessary but not sufficient condition for output quality. Enterprise reports still require source-context validation (verifying that values in the output are traceable to context data) and human review before delivery.
+
+**Recommended next control:** Add source-context validation that cross-references key output values (e.g., score values, top finding titles) against the input context used to generate the response. Pair with human review for customer-facing reports.
+
+---
+
 ## RISK-001 — Cloud Shell active in unreviewed environments
 
 **Severity:** High
