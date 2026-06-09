@@ -22,6 +22,27 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-008 — AI defaults must preserve safe startup while supporting reliable demos
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+`AI_PROVIDER=none` is correct as a safe default, but without documented activation steps and correct defaults for `AI_MAX_TOKENS` (was 2500) and `AI_REQUEST_TIMEOUT_SECONDS` (was 60), demo environments frequently produce truncated JSON or timeout errors. These failures are misdiagnosed as provider or key problems.
+
+### Decision
+
+Code defaults: `ai_max_tokens=4000`, `ai_request_timeout_seconds=90`. `.env.example` documents how to activate Claude in development/demo with explicit comments. `AI_PROVIDER=none` and `ANTHROPIC_API_KEY=` remain empty as safe defaults. Production must configure all AI settings explicitly.
+
+### Consequences
+
+- Development/demo environments get reliable Claude responses with fewer truncation failures.
+- `AI_PROVIDER=none` still prevents accidental AI activation on fresh deploys.
+- Production must pin `AI_MAX_TOKENS` and `AI_REQUEST_TIMEOUT_SECONDS` based on prompt size, latency, and cost — the code defaults are not production guidance.
+
+---
+
 ## ADR-007 — AI limitation validation must accept a controlled set of semantic signals
 
 **Date:** 2026-06-08

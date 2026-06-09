@@ -23,6 +23,12 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**AI Claude environment defaults** (`ai: update claude environment defaults for structured output`)
+- `core/config.py` — `ai_max_tokens` default: 2500 → 4000; `ai_request_timeout_seconds` default: 60 → 90
+- `.env.example` — AI section reestructurada con comentarios de activación, valores alineados
+- `tests/test_production_secrets.py` — 5 tests de configuración AI agregados (tokens, timeout, provider, key check)
+- Result: 212 passed, 1 skipped
+
 **AI limitation validator semantic signals** (`ai: accept semantic limitation signals in output validator`)
 - `ai/validators.py` — `LIMITATION_SIGNALS` constant; rigid `"limitation"` check → multi-signal `any()`
 - `tests/test_ai_validators.py` — creado, 19 tests (8 signals, case-insensitive, invalid, resources_available, no-regression)
@@ -65,7 +71,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **208 passed** as of 2026-06-08
+- **212 passed, 1 skipped** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
