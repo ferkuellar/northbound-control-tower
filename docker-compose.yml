@@ -7,7 +7,7 @@ services:
     container_name: nct-backend
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
       OBSERVABILITY_ENABLED: ${OBSERVABILITY_ENABLED:-true}
@@ -49,7 +49,7 @@ services:
     container_name: nct-worker
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       OBSERVABILITY_ENABLED: ${OBSERVABILITY_ENABLED:-true}
       PROMETHEUS_METRICS_ENABLED: ${PROMETHEUS_METRICS_ENABLED:-true}
@@ -114,7 +114,7 @@ services:
     container_name: nct-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-nct}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nct_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-nct}
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
@@ -171,7 +171,7 @@ services:
     container_name: nct-grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
     ports:
       - "${GRAFANA_PORT:-3001}:3000"

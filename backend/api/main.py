@@ -16,12 +16,17 @@ from security.headers import RequestValidationMiddleware, SecurityHeadersMiddlew
 
 
 _UNSAFE_JWT_SECRET = "change-me-only-for-local-development"
+_UNSAFE_JWT_SECRETS = {
+    _UNSAFE_JWT_SECRET,
+    "change-this-local-development-secret",
+}
+_WEAK_DATABASE_URL = "postgresql+psycopg://nct:nct_dev_password@postgres:5432/nct"
 
 
 def _validate_production_secrets() -> None:
     if settings.app_env != "production":
         return
-    if settings.jwt_secret_key == _UNSAFE_JWT_SECRET:
+    if settings.jwt_secret_key in _UNSAFE_JWT_SECRETS:
         raise RuntimeError(
             "JWT_SECRET_KEY is the default insecure value. "
             "Set a strong secret before running in production."
@@ -30,6 +35,11 @@ def _validate_production_secrets() -> None:
         raise RuntimeError(
             "CREDENTIAL_ENCRYPTION_KEY is not set. "
             "Generate a Fernet key and set it before running in production."
+        )
+    if settings.database_url == _WEAK_DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL contains the default development password. "
+            "Set a strong POSTGRES_PASSWORD and update DATABASE_URL before running in production."
         )
 
 

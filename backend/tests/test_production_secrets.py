@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from api.main import _UNSAFE_JWT_SECRET, _validate_production_secrets
+from api.main import _UNSAFE_JWT_SECRET, _WEAK_DATABASE_URL, _validate_production_secrets
 
 
 def test_production_with_default_secret_raises() -> None:
@@ -18,6 +18,7 @@ def test_production_with_strong_secret_passes() -> None:
         mock.app_env = "production"
         mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
         mock.credential_encryption_key = "a-valid-fernet-key"
+        mock.database_url = "postgresql+psycopg://nct:str0ng-pass@postgres:5432/nct"
         _validate_production_secrets()  # must not raise
 
 
@@ -91,6 +92,57 @@ def test_ai_provider_default_is_none() -> None:
 
     s = Settings(_env_file=None)  # type: ignore[call-arg]
     assert s.ai_provider == "none"
+
+
+def test_production_with_weak_database_url_raises() -> None:
+    with patch("api.main.settings") as mock:
+        mock.app_env = "production"
+        mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
+        mock.credential_encryption_key = "a-valid-fernet-key"
+        mock.database_url = _WEAK_DATABASE_URL
+        with pytest.raises(RuntimeError, match="DATABASE_URL"):
+            _validate_production_secrets()
+
+
+def test_production_with_old_env_example_jwt_secret_raises() -> None:
+    with patch("api.main.settings") as mock:
+        mock.app_env = "production"
+        mock.jwt_secret_key = "change-this-local-development-secret"
+        with pytest.raises(RuntimeError, match="JWT_SECRET_KEY"):
+            _validate_production_secrets()
+
+
+def test_env_example_has_no_known_weak_credentials() -> None:
+    import pathlib
+
+    candidates = [
+        pathlib.Path(__file__).parents[2] / ".env.example",
+        pathlib.Path(__file__).parents[1].parent / ".env.example",
+    ]
+    env_example = next((p for p in candidates if p.exists()), None)
+    if env_example is None:
+        pytest.skip(".env.example not available in this environment")
+
+    content = env_example.read_text(encoding="utf-8")
+    assert "nct_dev_password" not in content, ".env.example must not contain nct_dev_password"
+    assert "GRAFANA_ADMIN_PASSWORD=admin" not in content, ".env.example must not set GRAFANA_ADMIN_PASSWORD=admin"
+    assert "JWT_SECRET_KEY=change-this-local-development-secret" not in content
+
+
+def test_compose_has_no_hardcoded_credential_fallbacks() -> None:
+    import pathlib
+
+    candidates = [
+        pathlib.Path(__file__).parents[2] / "docker-compose.yml",
+        pathlib.Path(__file__).parents[1].parent / "docker-compose.yml",
+    ]
+    compose = next((p for p in candidates if p.exists()), None)
+    if compose is None:
+        pytest.skip("docker-compose.yml not available in this environment")
+
+    content = compose.read_text(encoding="utf-8")
+    assert "nct_dev_password" not in content, "docker-compose.yml must not contain hardcoded nct_dev_password"
+    assert "ADMIN_PASSWORD:-admin" not in content, "docker-compose.yml must not use :-admin as a password fallback"
 
 
 def test_env_example_contains_no_real_api_key() -> None:
