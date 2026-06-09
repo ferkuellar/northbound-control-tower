@@ -55,6 +55,11 @@ _Last updated: 2026-06-09_
 - `tests/test_saas_hardening.py` — 6 CORS preflight tests added
 - Result: 165 passed
 
+**Celery worker Docker healthcheck** (`infra: add celery worker healthcheck`)
+- `docker-compose.yml` — `healthcheck` agregado al servicio `worker` usando `celery inspect ping`
+- Verificado: `docker compose config` ✅, worker muestra `(healthy)` en `docker compose ps`
+- ADR-010, RISK-007 documentados
+
 **Baseline Content-Security-Policy** (`security: add baseline content security policy header`)
 - `security/headers.py` — `Content-Security-Policy` via `setdefault` in `SecurityHeadersMiddleware`
 - `tests/test_saas_hardening.py` — 4 tests agregados (CSP present, directives, headers preserved, setdefault no-overwrite)

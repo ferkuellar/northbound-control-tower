@@ -69,6 +69,24 @@
 
 ---
 
+## RISK-007 — Celery worker healthcheck does not validate end-to-end task execution
+
+**Severity:** Low
+**Likelihood:** Medium (queue issues can occur without worker crash)
+**Status:** Active — accepted for this phase
+
+**Description:** `celery inspect ping` confirms the worker process is alive and responding through the broker. It does not validate that tasks are being dequeued, executed, or completing successfully. A worker can be "healthy" by this metric while a queue accumulates, tasks fail silently, or specific task types are stuck.
+
+**Mitigation applied:**
+- Worker healthcheck added; Docker can detect crashed or hung workers.
+- Celery task metrics are instrumented (`CELERY_TASKS_TOTAL`, `CELERY_TASK_DURATION_SECONDS`) for Prometheus via `workers/celery_app.py`.
+
+**Residual risk:** No queue depth alerting, failed task count threshold, or task latency monitoring exists yet.
+
+**Recommended next control:** Add queue depth and failed task count to Prometheus/Grafana dashboards. Set alert thresholds for queue depth and task failure rate in a future operations sprint.
+
+---
+
 ## RISK-006 — CSP baseline still allows unsafe-inline
 
 **Severity:** Medium

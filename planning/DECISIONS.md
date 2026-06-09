@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## ADR-010 — All long-running worker services must include Docker healthchecks
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+The Celery worker service had no Docker healthcheck. Docker Compose treats a service without a healthcheck as permanently healthy as soon as the process starts, even if the worker crashes, hangs, or loses broker connectivity. Downstream services (or operators) cannot detect a silent worker failure from container metadata alone.
+
+### Decision
+
+All long-running worker services must include a Docker healthcheck. Celery workers use `celery inspect ping` as the baseline health signal, using the same `-A` path as the worker's startup command. The healthcheck confirms the worker process is alive and reachable through the broker.
+
+### Consequences
+
+- Docker and orchestrators can detect dead/hung workers and restart them automatically.
+- `docker compose ps` reflects real worker liveness, not just process presence.
+- `celery inspect ping` does not validate end-to-end task execution; queue depth, failed task tracking, and latency monitoring are still required for production observability.
+
+---
+
 ## ADR-009 — Backend responses must include a baseline Content-Security-Policy
 
 **Date:** 2026-06-09
