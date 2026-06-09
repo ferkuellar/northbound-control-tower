@@ -5,6 +5,7 @@ from oci.signer import Signer
 
 from collectors.oci.errors import OCIConfigurationError
 from models.cloud_account import CloudAccount, CloudAccountAuthType
+from security.encryption import decrypt_credential
 
 
 class OCISessionFactory:
@@ -25,11 +26,11 @@ class OCISessionFactory:
                 "tenancy": self.cloud_account.tenancy_ocid,
                 "user": self.cloud_account.user_ocid,
                 "fingerprint": self.cloud_account.fingerprint,
-                "key_content": self.cloud_account.private_key,
+                "key_content": decrypt_credential(self.cloud_account.private_key),
                 "region": self.cloud_account.region or self.cloud_account.default_region,
             }
             if self.cloud_account.private_key_passphrase:
-                config["pass_phrase"] = self.cloud_account.private_key_passphrase
+                config["pass_phrase"] = decrypt_credential(self.cloud_account.private_key_passphrase)
             oci_config.validate_config(config)
             return config
         raise OCIConfigurationError("Unsupported OCI auth type")

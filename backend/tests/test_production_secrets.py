@@ -17,7 +17,17 @@ def test_production_with_strong_secret_passes() -> None:
     with patch("api.main.settings") as mock:
         mock.app_env = "production"
         mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
+        mock.credential_encryption_key = "a-valid-fernet-key"
         _validate_production_secrets()  # must not raise
+
+
+def test_production_without_credential_key_raises() -> None:
+    with patch("api.main.settings") as mock:
+        mock.app_env = "production"
+        mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
+        mock.credential_encryption_key = None
+        with pytest.raises(RuntimeError, match="CREDENTIAL_ENCRYPTION_KEY"):
+            _validate_production_secrets()
 
 
 def test_development_with_default_secret_passes() -> None:

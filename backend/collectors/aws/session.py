@@ -5,6 +5,7 @@ from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
 from models.cloud_account import CloudAccount, CloudAccountAuthType
+from security.encryption import decrypt_credential
 
 
 class AWSSessionFactory:
@@ -17,7 +18,7 @@ class AWSSessionFactory:
         if auth_type == CloudAccountAuthType.ACCESS_KEYS:
             return boto3.Session(
                 aws_access_key_id=self.cloud_account.access_key_id,
-                aws_secret_access_key=self.cloud_account.secret_access_key,
+                aws_secret_access_key=decrypt_credential(self.cloud_account.secret_access_key),
                 region_name=self.cloud_account.default_region,
             )
         if auth_type == CloudAccountAuthType.ROLE_ARN:

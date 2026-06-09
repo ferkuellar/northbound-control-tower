@@ -4,11 +4,13 @@ import uuid
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, String
+from sqlalchemy import Boolean, ForeignKey, String, Text, event
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from core.config import settings
 from core.database import Base, TimestampMixin
+from security.encryption import encrypt_credential
 
 if TYPE_CHECKING:
     from models.inventory_scan import InventoryScan
@@ -39,15 +41,15 @@ class CloudAccount(Base, TimestampMixin):
     account_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     auth_type: Mapped[str] = mapped_column(String(30), nullable=False)
     access_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    secret_access_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    secret_access_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     role_arn: Mapped[str | None] = mapped_column(String(512), nullable=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     default_region: Mapped[str] = mapped_column(String(64), nullable=False)
     tenancy_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
     user_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
     fingerprint: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    private_key: Mapped[str | None] = mapped_column(String(4096), nullable=True)
-    private_key_passphrase: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    private_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    private_key_passphrase: Mapped[str | None] = mapped_column(Text, nullable=True)
     region: Mapped[str | None] = mapped_column(String(64), nullable=True)
     compartment_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -55,3 +57,21 @@ class CloudAccount(Base, TimestampMixin):
     tenant: Mapped["Tenant"] = relationship()
     resources: Mapped[list["Resource"]] = relationship(back_populates="cloud_account")
     scans: Mapped[list["InventoryScan"]] = relationship(back_populates="cloud_account")
+
+
+_SENSITIVE_FIELDS = ("secret_access_key", "private_key", "private_key_passphrase")
+
+
+def _is_fernet_token(value: str) -> bool:
+    return value.startswith("gAAAA")
+
+
+@event.listens_for(CloudAccount, "before_insert")
+@event.listens_for(CloudAccount, "before_update")
+def _encrypt_sensitive_fields(mapper, connection, target: CloudAccount) -> None:
+    if not settings.credential_encryption_key:
+        return
+    for field in _SENSITIVE_FIELDS:
+        value = getattr(target, field, None)
+        if value and not _is_fernet_token(value):
+            setattr(target, field, encrypt_credential(value))

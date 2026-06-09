@@ -19,10 +19,17 @@ _UNSAFE_JWT_SECRET = "change-me-only-for-local-development"
 
 
 def _validate_production_secrets() -> None:
-    if settings.app_env == "production" and settings.jwt_secret_key == _UNSAFE_JWT_SECRET:
+    if settings.app_env != "production":
+        return
+    if settings.jwt_secret_key == _UNSAFE_JWT_SECRET:
         raise RuntimeError(
             "JWT_SECRET_KEY is the default insecure value. "
             "Set a strong secret before running in production."
+        )
+    if not settings.credential_encryption_key:
+        raise RuntimeError(
+            "CREDENTIAL_ENCRYPTION_KEY is not set. "
+            "Generate a Fernet key and set it before running in production."
         )
 
 

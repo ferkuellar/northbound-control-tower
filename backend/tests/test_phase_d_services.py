@@ -135,6 +135,7 @@ def test_policy_gates_pass_with_cost_warning(monkeypatch, tmp_path: Path) -> Non
         "security_scan": {"tool_available": True, "highest_severity": "UNKNOWN", "blocking_findings_count": 0},
         "cost_estimate": {"available": False, "reason": "Infracost unavailable in local environment"},
     }
+    monkeypatch.setattr("provisioning.policy_gates.settings", SimpleNamespace(terraform_apply_enabled=True))
     monkeypatch.setattr("provisioning.policy_gates.resolve_request_workspace", lambda request: tmp_path)
 
     result = PolicyGateEngine(FakeDb(), artifact_service=FakeArtifactService()).evaluate(request)
