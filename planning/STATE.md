@@ -23,6 +23,11 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**AI limitation validator semantic signals** (`ai: accept semantic limitation signals in output validator`)
+- `ai/validators.py` — `LIMITATION_SIGNALS` constant; rigid `"limitation"` check → multi-signal `any()`
+- `tests/test_ai_validators.py` — creado, 19 tests (8 signals, case-insensitive, invalid, resources_available, no-regression)
+- Result: 208 passed
+
 **Claude provider JSON-only system message** (`ai: force claude provider to return json only`)
 - `ai/providers/claude.py` — `system=` message agregado a `client.messages.create()`
 - `tests/test_claude_provider.py` — creado, 8 tests (system presence, content, params, text extraction, non-text blocks, missing key)
@@ -60,7 +65,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **189 passed** as of 2026-06-08
+- **208 passed** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 

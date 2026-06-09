@@ -19,6 +19,16 @@ EXECUTED_ACTION_PATTERNS = [
 ]
 DESTRUCTIVE_WORDS = ("delete", "terminate", "destroy", "remove")
 SAFETY_WORDS = ("approval", "backup", "snapshot", "rollback", "validate")
+LIMITATION_SIGNALS = (
+    "limitation",
+    "constraint",
+    "no data",
+    "unavailable",
+    "not available",
+    "missing data",
+    "incomplete",
+    "empty context",
+)
 
 
 def parse_ai_output(raw_text: str) -> dict[str, Any]:
@@ -58,6 +68,9 @@ def validate_ai_output(raw_text: str, *, context: dict[str, Any]) -> dict[str, A
             raise AIOutputValidationError(f"AI output references unsupported provider: {provider}")
 
     output = parse_ai_output(raw_text)
-    if not context.get("limitations", {}).get("resources_available") and "limitation" not in lowered:
-        raise AIOutputValidationError("AI output must state limitations when resource context is missing")
+    if not context.get("limitations", {}).get("resources_available"):
+        if not any(signal in lowered for signal in LIMITATION_SIGNALS):
+            raise AIOutputValidationError(
+                "AI output must acknowledge data limitations when resource context is missing"
+            )
     return output

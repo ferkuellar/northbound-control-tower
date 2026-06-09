@@ -22,6 +22,28 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-007 — AI limitation validation must accept a controlled set of semantic signals
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+`validate_ai_output()` previously required the exact word `"limitation"` to accept an AI response when resource context was missing. Claude and other models legitimately express the same intent using phrases like `"no data available"`, `"constraint"`, `"missing data"`, `"incomplete"`, `"unavailable"`, etc. The rigid check caused valid responses to be rejected with `AIOutputValidationError`.
+
+### Decision
+
+The validator uses a `LIMITATION_SIGNALS` tuple as the authoritative vocabulary. Any signal in that set is sufficient to satisfy the limitation acknowledgment requirement. The set is defined as a named constant so it can be reviewed, extended, or referenced in tests without changing validator logic.
+
+### Consequences
+
+- Valid model responses are no longer rejected for wording differences.
+- The validator remains strict: outputs with none of the signals and `resources_available=False` still raise `AIOutputValidationError`.
+- Adding new signals requires only updating `LIMITATION_SIGNALS` — no logic change.
+- This does not replace a future structural approach where the model returns a `limitations` key in JSON.
+
+---
+
 ## ADR-006 — ClaudeProvider must use a system message requiring JSON-only responses
 
 **Date:** 2026-06-08
