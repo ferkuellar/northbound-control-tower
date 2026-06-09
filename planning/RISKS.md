@@ -69,6 +69,26 @@
 
 ---
 
+## RISK-009 — Misconfigured customer IAM roles can block apply or grant excessive permissions
+
+**Severity:** Medium
+**Likelihood:** Medium (new onboarding surface)
+**Status:** Active — requires customer-side validation
+
+**Description:** The separation of `role_arn` (read-only) and `remediation_role_arn` (write) is enforced in the application, but the actual IAM policies in the customer's AWS account are outside Northbound's control. A customer could configure `remediation_role_arn` with `AdministratorAccess`, widening blast radius beyond what templates require. Conversely, a misconfigured role without the required permissions will cause `terraform apply` to fail after precheck.
+
+**Mitigation applied:**
+- `TerraformApplyService` blocks apply if `remediation_role_arn` is not configured.
+- `get_aws_remediation_session()` enforces the guard at the session layer.
+- No silent fallback from remediation role to read-only role.
+- CloudTrail session names include operation label for attribution.
+
+**Residual risk:** Northbound cannot enforce the exact IAM policy content attached to customer-managed roles. Excessive permissions in `remediation_role_arn` are invisible at the application layer.
+
+**Recommended next control:** Add customer IAM policy validation during onboarding: verify `role_arn` has only read permissions (e.g., `ReadOnlyAccess`) and `remediation_role_arn` is scoped to the minimum required actions for each Terraform template.
+
+---
+
 ## RISK-008 — Seed demo data must not reach production environments
 
 **Severity:** Medium

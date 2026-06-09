@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## ADR-012 — AWS CloudAccount must separate read-only collector role from write-capable remediation role
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+Collectors, inventory scans, findings, and scoring require only read access. Terraform apply/remediation requires write access to specific AWS resources. Using the same IAM role for both violates least privilege: a bug or abuse in a passive scan flow could gain write-capable permissions, and CloudTrail audit trails lose operational separation.
+
+### Decision
+
+`CloudAccount` carries two distinct role ARN fields: `role_arn` (read-only, `northbound-readonly`) used by all collectors and inventory operations, and `remediation_role_arn` (write, `northbound-remediation`) used exclusively by Terraform apply/remediation flows. `TerraformApplyService` raises `ValueError` with an explicit message if `remediation_role_arn` is not configured — there is no silent fallback to `role_arn`. `get_aws_readonly_session()` and `get_aws_remediation_session()` are the canonical helpers; the latter enforces the guard.
+
+### Consequences
+
+- Collectors cannot accidentally use a write-capable role.
+- Terraform apply cannot proceed without an explicitly configured remediation role.
+- Customers must configure two IAM roles during onboarding; the exact IAM policy content is a future sprint.
+- CloudTrail will show distinct role session names for scans (`nb-svc-scan`) and apply (`nb-svc-apply` or per-user).
+
+---
+
 ## ADR-011 — AI demos require seeded context data; empty database must not be used for provider quality evaluation
 
 **Date:** 2026-06-09

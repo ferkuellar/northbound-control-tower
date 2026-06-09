@@ -3,7 +3,12 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from collectors.aws.session import AWSSessionFactory, build_role_session_name
+from collectors.aws.session import (
+    AWSSessionFactory,
+    build_role_session_name,
+    get_aws_readonly_session,
+    get_aws_remediation_session,
+)
 
 
 # ── build_role_session_name ───────────────────────────────────────────────────
@@ -143,3 +148,101 @@ def test_hardcoded_session_name_removed() -> None:
 
     source = inspect.getsource(session_module)
     assert "northbound-control-tower-inventory" not in source
+
+
+# ── Role separation: readonly vs remediation ─────────────────────────────────
+
+def _make_dual_role_account(
+    remediation_role_arn: str | None = "arn:aws:iam::123456789012:role/northbound-remediation",
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        auth_type="role_arn",
+        role_arn="arn:aws:iam::123456789012:role/northbound-readonly",
+        remediation_role_arn=remediation_role_arn,
+        external_id=None,
+        default_region="us-east-1",
+    )
+
+
+def test_readonly_session_uses_role_arn() -> None:
+    account = _make_dual_role_account()
+    captured: dict = {}
+
+    mock_sts = MagicMock()
+    mock_sts.assume_role.side_effect = lambda **kw: (captured.update(kw), _fake_sts_response())[1]
+    mock_base_session = MagicMock()
+    mock_base_session.client.return_value = mock_sts
+
+    with patch("collectors.aws.session.boto3.Session", return_value=mock_base_session):
+        get_aws_readonly_session(account, timeout_seconds=30)
+
+    assert captured["RoleArn"] == "arn:aws:iam::123456789012:role/northbound-readonly"
+
+
+def test_readonly_session_does_not_use_remediation_role_arn() -> None:
+    account = _make_dual_role_account()
+    captured: dict = {}
+
+    mock_sts = MagicMock()
+    mock_sts.assume_role.side_effect = lambda **kw: (captured.update(kw), _fake_sts_response())[1]
+    mock_base_session = MagicMock()
+    mock_base_session.client.return_value = mock_sts
+
+    with patch("collectors.aws.session.boto3.Session", return_value=mock_base_session):
+        get_aws_readonly_session(account, timeout_seconds=30)
+
+    assert captured["RoleArn"] != "arn:aws:iam::123456789012:role/northbound-remediation"
+
+
+def test_remediation_session_uses_remediation_role_arn() -> None:
+    account = _make_dual_role_account()
+    captured: dict = {}
+
+    mock_sts = MagicMock()
+    mock_sts.assume_role.side_effect = lambda **kw: (captured.update(kw), _fake_sts_response())[1]
+    mock_base_session = MagicMock()
+    mock_base_session.client.return_value = mock_sts
+
+    with patch("collectors.aws.session.boto3.Session", return_value=mock_base_session):
+        get_aws_remediation_session(account, timeout_seconds=30)
+
+    assert captured["RoleArn"] == "arn:aws:iam::123456789012:role/northbound-remediation"
+
+
+def test_remediation_session_raises_if_remediation_role_arn_is_none() -> None:
+    account = _make_dual_role_account(remediation_role_arn=None)
+    import pytest
+    with pytest.raises(ValueError, match="remediation_role_arn"):
+        get_aws_remediation_session(account, timeout_seconds=30)
+
+
+def test_no_fallback_from_remediation_to_role_arn() -> None:
+    account = _make_dual_role_account(remediation_role_arn=None)
+    import pytest
+    with pytest.raises(ValueError):
+        get_aws_remediation_session(account, timeout_seconds=30)
+    # role_arn exists but remediation_role_arn is None — must not proceed
+    assert account.role_arn is not None
+
+
+def test_remediation_session_operation_label() -> None:
+    account = _make_dual_role_account()
+    captured: dict = {}
+
+    mock_sts = MagicMock()
+    mock_sts.assume_role.side_effect = lambda **kw: (captured.update(kw), _fake_sts_response())[1]
+    mock_base_session = MagicMock()
+    mock_base_session.client.return_value = mock_sts
+
+    with patch("collectors.aws.session.boto3.Session", return_value=mock_base_session):
+        get_aws_remediation_session(account, timeout_seconds=30, user_id="u1u2u3u4", operation="apply")
+
+    assert "apply" in captured["RoleSessionName"]
+
+
+def test_no_silent_fallback_in_session_module() -> None:
+    import inspect
+    import collectors.aws.session as session_module
+
+    source = inspect.getsource(session_module)
+    assert "remediation_role_arn or" not in source, "Silent fallback pattern must not exist in session module"

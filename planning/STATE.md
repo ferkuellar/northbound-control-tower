@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-09_
+_Last updated: 2026-06-09 (role separation sprint)_
 
 ## Completed
 
@@ -62,6 +62,18 @@ _Last updated: 2026-06-09_
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
 
+**AWS role separation: readonly vs remediation** (`security: separate readonly and remediation aws roles`)
+- `models/cloud_account.py` — `remediation_role_arn: Mapped[str | None]` added after `role_arn`
+- `alembic/versions/2026_06_09_0900-0018_remediation_role_arn.py` — migration created; roundtrip verified
+- `api/schemas/inventory.py` — `AWSCloudAccountCreate` + `CloudAccountRead` expose `remediation_role_arn`
+- `api/routes/cloud_accounts.py` — `remediation_role_arn` passed on AWS account creation
+- `collectors/aws/session.py` — `role_arn_override` param; `get_aws_readonly_session()` and `get_aws_remediation_session()` helpers; guard raises if `remediation_role_arn` is None
+- `provisioning/terraform_apply_service.py` — `_assert_remediation_role()` guard fires before precheck; raises `ValueError` with explicit message; no fallback to `role_arn`
+- `tests/test_aws_session.py` — 8 new tests (readonly uses role_arn, remediation uses remediation_role_arn, raises on None, no fallback, operation label, source scan)
+- `tests/test_terraform_apply_service.py` — created; 6 tests (raises on missing, error message, proceeds on set, skips when no cloud_account_id, no fallback, source scan)
+- ADR-012, RISK-009 documented
+- Result: 238 passed, 3 skipped (pre-existing rate limit skips)
+
 **Celery worker Docker healthcheck** (`infra: add celery worker healthcheck`)
 - `docker-compose.yml` — `healthcheck` agregado al servicio `worker` usando `celery inspect ping`
 - Verificado: `docker compose config` ✅, worker muestra `(healthy)` en `docker compose ps`
@@ -88,10 +100,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **216 passed, 1 skipped** as of 2026-06-09
+- **238 passed, 3 skipped** as of 2026-06-09 (role separation sprint)
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), and RISK-006 (CSP unsafe-inline) are tracked open.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), and RISK-009 (IAM role misconfiguration) are tracked open.

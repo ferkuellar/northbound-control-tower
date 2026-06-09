@@ -44,6 +44,7 @@ def create_aws_cloud_account(
         access_key_id=payload.access_key_id,
         secret_access_key=payload.secret_access_key,
         role_arn=payload.role_arn,
+        remediation_role_arn=payload.remediation_role_arn,
         external_id=payload.external_id,
         default_region=payload.default_region or settings.aws_default_region,
         is_active=True,

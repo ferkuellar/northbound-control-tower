@@ -15,6 +15,7 @@ class AWSCloudAccountCreate(BaseModel):
     access_key_id: str | None = Field(default=None, max_length=255)
     secret_access_key: str | None = Field(default=None, max_length=1024)
     role_arn: str | None = Field(default=None, max_length=512)
+    remediation_role_arn: str | None = Field(default=None, max_length=512)
     external_id: str | None = Field(default=None, max_length=255)
     default_region: str = Field(default="us-east-1", min_length=1, max_length=64)
 
@@ -41,6 +42,7 @@ class CloudAccountRead(BaseModel):
     account_id: str | None
     auth_type: CloudAccountAuthType
     role_arn: str | None
+    remediation_role_arn: str | None
     external_id: str | None
     default_region: str
     region: str | None

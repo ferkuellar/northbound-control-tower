@@ -9,6 +9,7 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
+from models.cloud_account import CloudAccount
 from models.provisioning_request import ProvisioningRequest
 from provisioning.apply_lock_service import ApplyLockService
 from provisioning.apply_precheck_service import ApplyPrecheckResult, ApplyPrecheckService
@@ -49,6 +50,7 @@ class TerraformApplyService:
         self.runner = runner or subprocess.run
 
     def apply(self, request: ProvisioningRequest, *, created_by_user_id: str | None = None) -> TerraformApplyResult:
+        self._assert_remediation_role(request)
         precheck = self.precheck_service.run(request, created_by_user_id=created_by_user_id)
         if not precheck.passed or precheck.workspace_path is None:
             self.db.commit()
@@ -148,6 +150,19 @@ class TerraformApplyService:
         self.lock_service.release(lock_result.lock, status="RELEASED_WITH_ERROR", error_message=stderr)
         self.db.commit()
         return TerraformApplyResult(precheck=precheck, apply_executed=True, success=False, exit_code=exit_code, stderr=stderr)
+
+    def _assert_remediation_role(self, request: ProvisioningRequest) -> None:
+        if request.cloud_account_id is None:
+            return
+        cloud_account = self.db.get(CloudAccount, request.cloud_account_id)
+        if cloud_account is None:
+            return
+        if not cloud_account.remediation_role_arn:
+            raise ValueError(
+                "Terraform apply requires remediation_role_arn to be configured "
+                "for this cloud account. "
+                "Set the northbound-remediation IAM role ARN before enabling apply."
+            )
 
     def _safe_env(self) -> dict[str, str]:
         allowed_keys = {"PATH", "HOME", "USERPROFILE", "SYSTEMROOT", "TEMP", "TMP"}

@@ -43,6 +43,7 @@ class CloudAccount(Base, TimestampMixin):
     access_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     secret_access_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     role_arn: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    remediation_role_arn: Mapped[str | None] = mapped_column(String(512), nullable=True)
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     default_region: Mapped[str] = mapped_column(String(64), nullable=False)
     tenancy_ocid: Mapped[str | None] = mapped_column(String(255), nullable=True)

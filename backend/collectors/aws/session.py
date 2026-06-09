@@ -26,6 +26,13 @@ def build_role_session_name(
 
 
 class AWSSessionFactory:
+    """Creates AWS boto3 sessions for a given CloudAccount.
+
+    For passive scan/inventory operations use the default (role_arn).
+    For Terraform apply/remediation use role_arn_override=cloud_account.remediation_role_arn
+    via get_aws_remediation_session() — never pass remediation_role_arn silently.
+    """
+
     def __init__(
         self,
         cloud_account: CloudAccount,
@@ -33,11 +40,13 @@ class AWSSessionFactory:
         timeout_seconds: int,
         user_id: str | None = None,
         operation: str = "scan",
+        role_arn_override: str | None = None,
     ) -> None:
         self.cloud_account = cloud_account
         self.timeout_seconds = timeout_seconds
         self.user_id = user_id
         self.operation = operation
+        self.role_arn_override = role_arn_override
 
     def create_session(self) -> boto3.Session:
         auth_type = CloudAccountAuthType(self.cloud_account.auth_type)
@@ -48,10 +57,11 @@ class AWSSessionFactory:
                 region_name=self.cloud_account.default_region,
             )
         if auth_type == CloudAccountAuthType.ROLE_ARN:
+            role_arn = self.role_arn_override or self.cloud_account.role_arn
             base_session = boto3.Session(region_name=self.cloud_account.default_region)
             sts_client = base_session.client("sts", config=self.client_config())
             assume_role_args = {
-                "RoleArn": self.cloud_account.role_arn,
+                "RoleArn": role_arn,
                 "RoleSessionName": build_role_session_name(user_id=self.user_id, operation=self.operation),
             }
             if self.cloud_account.external_id:
@@ -72,6 +82,49 @@ class AWSSessionFactory:
             read_timeout=self.timeout_seconds,
             retries={"max_attempts": 3, "mode": "standard"},
         )
+
+
+def get_aws_readonly_session(
+    cloud_account: CloudAccount,
+    *,
+    timeout_seconds: int,
+    user_id: str | None = None,
+    operation: str = "scan",
+) -> boto3.Session:
+    """Create a session using role_arn — for collectors and inventory scans only."""
+    return AWSSessionFactory(
+        cloud_account,
+        timeout_seconds=timeout_seconds,
+        user_id=user_id,
+        operation=operation,
+    ).create_session()
+
+
+def get_aws_remediation_session(
+    cloud_account: CloudAccount,
+    *,
+    timeout_seconds: int,
+    user_id: str | None = None,
+    operation: str = "apply",
+) -> boto3.Session:
+    """Create a session using remediation_role_arn — for Terraform apply only.
+
+    Raises ValueError if remediation_role_arn is not configured.
+    Never falls back to role_arn.
+    """
+    if not cloud_account.remediation_role_arn:
+        raise ValueError(
+            "Terraform apply requires remediation_role_arn to be configured "
+            "for this cloud account. "
+            "Set the northbound-remediation IAM role ARN before enabling apply."
+        )
+    return AWSSessionFactory(
+        cloud_account,
+        timeout_seconds=timeout_seconds,
+        user_id=user_id,
+        operation=operation,
+        role_arn_override=cloud_account.remediation_role_arn,
+    ).create_session()
 
 
 def is_access_denied(error: Exception) -> bool:
