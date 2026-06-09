@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-012 — Alembic must be invoked from backend/ or with explicit -c flag
+
+**Severity:** Low
+**Likelihood:** Low (Docker compose enforces correct workdir)
+**Status:** Mitigated — accepted residual
+
+**Description:** With only `backend/alembic.ini` remaining, running `alembic` from the repository root without `-c backend/alembic.ini` will produce a "can't find config file" error. This is a fast-fail, not a silent wrong-config execution. Developers unfamiliar with the layout may be confused until they read the docs.
+
+**Mitigation applied:**
+- Root `alembic.ini` deleted — no silent wrong-config scenario.
+- All documented commands use `docker compose run --rm backend alembic ...` which runs inside the container at `/app` (the backend workdir).
+- `CLAUDE.md` documents `cd backend && alembic revision --autogenerate`.
+
+**Residual risk:** A developer running `alembic` from the repository root gets a clear error. Recovery is: `cd backend && alembic <command>` or `alembic -c backend/alembic.ini <command>`.
+
+**Recommended next control:** No action required — fast-fail on missing config is the correct behavior.
+
+---
+
 ## RISK-011 — Prompt evaluator checks structure and heuristics, not factual correctness
 
 **Severity:** Medium

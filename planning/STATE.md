@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-08 (prompt evaluator sprint)_
+_Last updated: 2026-06-08 (alembic consolidation)_
 
 ## Completed
 
@@ -62,6 +62,12 @@ _Last updated: 2026-06-08 (prompt evaluator sprint)_
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
 
+**Duplicate root Alembic config removed** (`repo: remove duplicate root alembic config`)
+- `alembic.ini` (root) — deleted via `git rm`
+- `backend/alembic.ini` — sole source of truth; `alembic current` confirmed at `0018_remediation_role_arn (head)`
+- ADR-015, RISK-012 documented
+- No migrations generated; no models changed
+
 **Measurable prompt evaluation script** (`ai: add measurable prompt evaluation script`)
 - `scripts/test_prompts.py` — created; `check_executive_summary()` returning stable 13 criteria; `evaluate()` dispatcher; `main()` CLI with `--type`, `--file`, `--save`, `--strict`
 - `tests/test_test_prompts.py` — created; 24 tests (criterion count stability, valid output 13/13, individual failures, incomplete output never skips criteria, CLI --file, CLI --strict)
@@ -121,4 +127,4 @@ Priority order per CLAUDE.md:
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), and RISK-011 (evaluator structural only, not factual) are tracked open.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), and RISK-012 (alembic workdir) are tracked.

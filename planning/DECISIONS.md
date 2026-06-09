@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## ADR-015 — Alembic has a single source of truth: backend/alembic.ini
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+Two `alembic.ini` files coexisted: one at the repository root (`script_location = backend/alembic`) and one at `backend/alembic.ini` (`script_location = alembic`). The root file created path ambiguity — running `alembic` from the wrong working directory could silently pick up the wrong configuration, especially in local setups, CI, or if Docker bind-mounts change.
+
+### Decision
+
+`backend/alembic.ini` is the sole Alembic configuration file. The root `alembic.ini` has been removed. All migration commands must be run from the `backend` directory or inside the Docker container (where `/app` is the `backend` workdir).
+
+### Consequences
+
+- No ambiguity about which `alembic.ini` is authoritative.
+- `docker compose run --rm backend alembic upgrade head` is the canonical migration command.
+- Running `alembic` from the repository root without `-c backend/alembic.ini` will fail fast rather than silently using the wrong config.
+- Any new tooling (CI, scripts) must invoke Alembic from `backend/` or with the explicit `-c` flag.
+
+---
+
 ## ADR-014 — Prompt iteration must use measurable evaluation criteria with an objective stop condition
 
 **Date:** 2026-06-08
