@@ -174,3 +174,51 @@ def test_login_rate_limit_returns_429() -> None:
 
     assert response.status_code == 429
     assert "Retry-After" in response.headers
+
+
+# ── CORS header allowlist tests ───────────────────────────────────────────────
+
+_CORS_ORIGIN = "http://localhost:3000"
+_PREFLIGHT_BASE = {
+    "Origin": _CORS_ORIGIN,
+    "Access-Control-Request-Method": "GET",
+}
+
+
+def _preflight(header: str) -> str:
+    """Return the Access-Control-Allow-Headers value for a preflight with the given request header."""
+    client = TestClient(app)
+    response = client.options(
+        "/health",
+        headers={**_PREFLIGHT_BASE, "Access-Control-Request-Headers": header},
+    )
+    return response.headers.get("access-control-allow-headers", "")
+
+
+def test_cors_allows_authorization_header() -> None:
+    assert "authorization" in _preflight("Authorization").lower()
+
+
+def test_cors_allows_content_type_header() -> None:
+    assert "content-type" in _preflight("Content-Type").lower()
+
+
+def test_cors_allows_x_tenant_id_header() -> None:
+    assert "x-tenant-id" in _preflight("X-Tenant-ID").lower()
+
+
+def test_cors_allows_x_request_id_header() -> None:
+    assert "x-request-id" in _preflight("X-Request-ID").lower()
+
+
+def test_cors_allows_accept_header() -> None:
+    assert "accept" in _preflight("Accept").lower()
+
+
+def test_cors_does_not_use_wildcard_headers() -> None:
+    import api.main as main_module
+    import inspect
+
+    source = inspect.getsource(main_module)
+    assert 'allow_headers=["*"]' not in source
+    assert "allow_headers=['*']" not in source

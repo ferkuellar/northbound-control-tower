@@ -23,6 +23,11 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**CORS header allowlist** (`security: replace wildcard cors headers with explicit allowlist`)
+- `api/main.py` — `allow_headers=["*"]` replaced with explicit list (Authorization, Content-Type, X-Tenant-ID, X-Request-ID, Accept)
+- `tests/test_saas_hardening.py` — 6 CORS preflight tests added
+- Result: 165 passed
+
 ## Roadmap Queue
 
 Priority order per CLAUDE.md:
@@ -39,7 +44,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **159 passed** as of 2026-06-08
+- **165 passed** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 

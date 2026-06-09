@@ -22,6 +22,27 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-003 — CORS request headers must be explicitly allowlisted
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+The CORS configuration used `allow_headers=["*"]`, which permits any request header cross-origin. Enterprise security auditors and automated scanners flag wildcard CORS headers as a finding because they unnecessarily broaden the attack surface and prevent header-level policy enforcement.
+
+### Decision
+
+`allow_headers` uses an explicit list: `Authorization`, `Content-Type`, `X-Tenant-ID`, `X-Request-ID`, `Accept`. Headers were derived from actual backend usage (`middleware/tenant.py`, `observability/middleware.py`) and standard API client needs. New headers must be added only with documented justification.
+
+### Consequences
+
+- Browsers will block cross-origin requests that include unlisted request headers.
+- Any new header required by the API must be explicitly added here.
+- `allow_headers=["*"]` must not reappear in production-facing configurations.
+
+---
+
 ## ADR-002 — Credential encryption at rest via Fernet
 
 **Date:** 2026-06-08
