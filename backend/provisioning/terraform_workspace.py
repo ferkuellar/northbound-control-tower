@@ -25,12 +25,9 @@ class TerraformWorkspaceManager:
         self.runtime_root = (runtime_root or self.repo_root / "runtime" / "terraform-workspaces").resolve()
 
     def _detect_repo_root(self) -> Path:
-        current = Path(__file__).resolve()
-        backend_root = current.parents[1]
-        project_root = current.parents[2]
-        if (project_root / "backend").is_dir():
-            return project_root
-        return backend_root
+        # The terraform catalog lives in backend/terraform-catalog/, so the root
+        # is always the backend directory regardless of execution context.
+        return Path(__file__).resolve().parents[1]
 
     def prepare_workspace(
         self,

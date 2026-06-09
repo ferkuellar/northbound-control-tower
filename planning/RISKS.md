@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-013 — External scripts referencing the removed root terraform-catalog/ path will fail
+
+**Severity:** Low
+**Likelihood:** Low (no external scripts found referencing the root path)
+**Status:** Mitigated — accepted residual
+
+**Description:** The root `terraform-catalog/` directory has been deleted. Any script, CI step, or documentation that still references `./terraform-catalog/` or `/terraform-catalog/` will break with a "path not found" error. A search of all files found only one historical audit document (`docs/audits/terraform-validate-plan-audit.md`) referencing the root path — no operational scripts were affected.
+
+**Mitigation applied:**
+- Root `terraform-catalog/` deleted; `backend/terraform-catalog/` is the sole catalog.
+- `_detect_repo_root()` updated to always resolve paths relative to `backend/`, eliminating dual-path logic.
+- All tests pass after the change.
+
+**Residual risk:** If a future developer adds a script outside `backend/` that references `terraform-catalog/` from the repo root, it will fail. The correct path is `backend/terraform-catalog/`.
+
+**Recommended next control:** No action required. Fast-fail on missing path is the correct behavior.
+
+---
+
 ## RISK-012 — Alembic must be invoked from backend/ or with explicit -c flag
 
 **Severity:** Low

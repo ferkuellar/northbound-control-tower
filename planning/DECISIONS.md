@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## ADR-016 — Terraform catalog has a single source of truth: backend/terraform-catalog/
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+Two copies of the Terraform template catalog coexisted: `terraform-catalog/` at the repository root and `backend/terraform-catalog/`. `TerraformWorkspaceManager._detect_repo_root()` pointed to the project root on host and to the backend directory inside Docker. This meant the two copies had to stay in sync manually — a maintenance burden and a source of drift.
+
+### Decision
+
+`backend/terraform-catalog/` is the sole Terraform catalog. The root copy has been deleted. `_detect_repo_root()` now always returns the backend directory (`Path(__file__).resolve().parents[1]`), so `module_path` values in `template_catalog.py` resolve to `backend/terraform-catalog/` in all execution contexts (Docker and host).
+
+### Consequences
+
+- Single source of truth for templates; no silent drift between root and backend copies.
+- Template additions and modifications happen exclusively in `backend/terraform-catalog/`.
+- `module_path` values starting with `terraform-catalog/` resolve relative to the backend directory.
+- Any future script that needs to reference Terraform templates from outside the backend must use the full path `backend/terraform-catalog/`.
+
+---
+
 ## ADR-015 — Alembic has a single source of truth: backend/alembic.ini
 
 **Date:** 2026-06-08

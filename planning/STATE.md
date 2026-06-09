@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-08 (alembic consolidation)_
+_Last updated: 2026-06-08 (terraform catalog consolidation)_
 
 ## Completed
 
@@ -61,6 +61,14 @@ _Last updated: 2026-06-08 (alembic consolidation)_
 - Diferencias vs guía: `Finding.rule_id` requerido; `CloudScore.summary` requerido; sin `formula_version`/`findings_count`/`weights_used`/`domain_scores`
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
+
+**Duplicate root Terraform catalog removed** (`repo: remove duplicate root terraform catalog`)
+- `terraform-catalog/` (root, 5 files) — deleted via `git rm -r`
+- `backend/terraform-catalog/` — sole source of truth; `backend/terraform-catalog/local/noop-validation/` preserved
+- `backend/provisioning/terraform_workspace.py` — `_detect_repo_root()` simplified to always return `backend_root`; dual-path host/Docker logic removed
+- 16/16 Terraform tests pass; 294/294 suite pass
+- ADR-016, RISK-013 documented
+- No templates modified; no migrations generated
 
 **Duplicate root Alembic config removed** (`repo: remove duplicate root alembic config`)
 - `alembic.ini` (root) — deleted via `git rm`
@@ -127,4 +135,4 @@ Priority order per CLAUDE.md:
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), and RISK-012 (alembic workdir) are tracked.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), and RISK-013 (root terraform-catalog refs) are tracked.
