@@ -4,6 +4,12 @@
 
 Terminal visual, controlled commands, isolated execution path, human approval, evidence capture, and post-change validation.
 
+## Global Enable/Disable
+
+Cloud Shell is controlled by `CLOUD_SHELL_ENABLED` and is disabled by default.
+Production environments must explicitly set `CLOUD_SHELL_ENABLED=true` only after operational approval.
+The guard fires before authentication and before executor instantiation — a disabled shell produces zero audit records and zero command execution.
+
 ## Threat Model
 
 Primary risks:
