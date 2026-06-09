@@ -22,6 +22,19 @@ def _make_response(*texts: str) -> SimpleNamespace:
 
 # ── system message ─────────────────────────────────────────────────────────────
 
+def test_system_message_is_imported_system_prompt() -> None:
+    from ai.prompts import SYSTEM_PROMPT
+    provider = _make_provider()
+    mock_client = MagicMock()
+    mock_client.messages.create.return_value = _make_response("{}")
+
+    with patch("ai.providers.claude.anthropic.Anthropic", return_value=mock_client):
+        provider.generate_analysis("test prompt", max_tokens=100, temperature=0.2)
+
+    system = mock_client.messages.create.call_args.kwargs["system"]
+    assert system == SYSTEM_PROMPT, "ClaudeProvider must use SYSTEM_PROMPT from ai.prompts, not a hardcoded string"
+
+
 def test_system_message_is_sent() -> None:
     provider = _make_provider()
     mock_client = MagicMock()

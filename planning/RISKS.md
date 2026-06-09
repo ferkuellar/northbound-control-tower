@@ -69,6 +69,25 @@
 
 ---
 
+## RISK-010 — Few-shot examples and explicit schemas increase prompt size and truncation risk
+
+**Severity:** Medium
+**Likelihood:** Low (current analysis types are within token budget)
+**Status:** Active — monitor
+
+**Description:** `EXECUTIVE_SUMMARY_SCHEMA` and `EXECUTIVE_SUMMARY_EXAMPLE` add approximately 1500–2000 tokens to the `executive_summary` user prompt. For `full_assessment` (which combines all analysis types) this could push the prompt near or past the effective context window when the cloud context is large (many resources/findings/scores).
+
+**Mitigation applied:**
+- `AI_MAX_TOKENS=4000` and `AI_REQUEST_TIMEOUT_SECONDS=90` are set as defaults.
+- `AIContextBuilder` limits input to 50 findings and 100 resources (`AI_MAX_INPUT_FINDINGS`, `AI_MAX_INPUT_RESOURCES`).
+- `executive_summary` is the only prompt currently upgraded; other analysis types use `BASE_RULES` (shorter).
+
+**Residual risk:** `full_assessment` concatenates all sections and does not have per-section schemas yet. A large context + expanded schema + example could cause Claude to truncate structured JSON or produce incomplete `recommendations_30_60_90`.
+
+**Recommended next control:** Add per-analysis-type token budget estimation before prompt dispatch. Consider sectioned generation for `full_assessment` (one section per call) in a future sprint.
+
+---
+
 ## RISK-009 — Misconfigured customer IAM roles can block apply or grant excessive permissions
 
 **Severity:** Medium

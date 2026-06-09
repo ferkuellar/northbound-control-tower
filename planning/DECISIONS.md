@@ -1,5 +1,28 @@
 # Architecture Decisions
 
+## ADR-013 — AI prompts that feed structured UI/reporting must use explicit JSON schemas and versioned definitions
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`executive_summary_prompt()` previously used vague instructions (`"Return structured JSON with keys relevant to the requested analysis"`, `"concise leadership language"`). Claude inferred the structure on every call, producing variable output that could break the frontend, reporting layer, or validators expecting specific keys. Enterprise stakeholders (CISO/CFO) expect consulting-grade depth, not informal summaries.
+
+### Decision
+
+`ai/prompts.py` defines `SYSTEM_PROMPT` (versioned, role-specific, audience-specific, JSON-only enforcement), `EXECUTIVE_SUMMARY_SCHEMA` (fixed key structure), and `EXECUTIVE_SUMMARY_EXAMPLE` (canonical few-shot with fictitious data and explicit "do not copy" warning). `ClaudeProvider` imports and uses `SYSTEM_PROMPT` instead of a hardcoded provider-local string. The prompt version is bumped to `phase9-v1.1`. `executive_summary_prompt()` includes schema, example, and version in every call. Other analysis types retain `BASE_RULES` pending future schema migration.
+
+### Consequences
+
+- `executive_summary` output follows a fixed, parseable structure. Frontend/reporting keys are stable.
+- CISO/CFO-oriented language reduces the need for post-processing.
+- Few-shot example increases prompt size; monitor truncation for `full_assessment` (combines all types).
+- Future sprints should add schemas for `technical_assessment`, `remediation_recommendations`, `full_assessment`.
+- `PROMPT_VERSION` must be incremented on every semantic change to prompt content.
+
+---
+
 ## ADR-012 — AWS CloudAccount must separate read-only collector role from write-capable remediation role
 
 **Date:** 2026-06-09

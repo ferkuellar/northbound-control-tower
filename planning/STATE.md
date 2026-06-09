@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-09 (role separation sprint)_
+_Last updated: 2026-06-09 (prompt schema sprint)_
 
 ## Completed
 
@@ -62,6 +62,15 @@ _Last updated: 2026-06-09 (role separation sprint)_
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
 
+**AI executive summary prompt schema** (`ai: add explicit executive summary prompt schema`)
+- `ai/prompts.py` — `PROMPT_VERSION` → `"phase9-v1.1"`; `SYSTEM_PROMPT` (Principal Cloud Architect, CISO/CFO, JSON-only, safety rules); `EXECUTIVE_SUMMARY_SCHEMA` (fixed 6-section structure); `EXECUTIVE_SUMMARY_EXAMPLE` (few-shot, fictitious, do-not-copy warning); `executive_summary_prompt()` rebuilt to include schema + example + version
+- `ai/providers/claude.py` — imports and uses `SYSTEM_PROMPT` from `ai.prompts`; hardcoded system string removed
+- `tests/test_ai_prompts.py` — created; 31 tests (PROMPT_VERSION, SYSTEM_PROMPT content, schema structure, example content, prompt integration, other types)
+- `tests/test_claude_provider.py` — 1 new test: `test_system_message_is_imported_system_prompt`
+- `BASE_RULES` retained for non-`executive_summary` analysis types
+- ADR-013, RISK-010 documented
+- Result: 270 passed, 3 skipped
+
 **AWS role separation: readonly vs remediation** (`security: separate readonly and remediation aws roles`)
 - `models/cloud_account.py` — `remediation_role_arn: Mapped[str | None]` added after `role_arn`
 - `alembic/versions/2026_06_09_0900-0018_remediation_role_arn.py` — migration created; roundtrip verified
@@ -100,10 +109,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **238 passed, 3 skipped** as of 2026-06-09 (role separation sprint)
+- **270 passed, 3 skipped** as of 2026-06-09 (prompt schema sprint)
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), and RISK-009 (IAM role misconfiguration) are tracked open.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), and RISK-010 (prompt truncation) are tracked open.

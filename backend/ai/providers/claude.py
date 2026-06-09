@@ -1,6 +1,7 @@
 import anthropic
 
 from ai.enums import AIProvider
+from ai.prompts import SYSTEM_PROMPT
 from ai.providers.base import BaseAIProvider
 from ai.schemas import AIProviderStatus
 from core.config import settings
@@ -32,13 +33,7 @@ class ClaudeProvider(BaseAIProvider):
             model=self.model_name,
             max_tokens=max_tokens,
             temperature=temperature,
-            system=(
-                "You are a cloud infrastructure analyst for Northbound FinOps. "
-                "Always respond with valid JSON only — no markdown fences, no preamble, "
-                "no explanation outside the JSON. "
-                "Your entire response must be parseable by json.loads(). "
-                "Never invent data not present in the provided context."
-            ),
+            system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": prompt}],
         )
         parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
