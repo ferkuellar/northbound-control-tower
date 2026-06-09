@@ -35,3 +35,28 @@ def test_development_with_default_secret_passes() -> None:
         mock.app_env = "development"
         mock.jwt_secret_key = _UNSAFE_JWT_SECRET
         _validate_production_secrets()  # must not raise
+
+
+# ── Claude model default ──────────────────────────────────────────────────────
+
+def test_claude_model_default_is_current() -> None:
+    from core.config import Settings
+
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.claude_model == "claude-sonnet-4-6"
+
+
+def test_claude_model_respects_env_override(monkeypatch) -> None:
+    monkeypatch.setenv("CLAUDE_MODEL", "claude-opus-4-8")
+    from core.config import Settings
+
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.claude_model == "claude-opus-4-8"
+
+
+def test_claude_model_old_default_not_hardcoded() -> None:
+    import inspect
+    import core.config as config_module
+
+    source = inspect.getsource(config_module)
+    assert "claude-3-5-sonnet-latest" not in source

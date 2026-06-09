@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = Field(default="https://api.deepseek.com", alias="DEEPSEEK_BASE_URL")
     deepseek_model: str = Field(default="deepseek-chat", alias="DEEPSEEK_MODEL")
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    claude_model: str = Field(default="claude-3-5-sonnet-latest", alias="CLAUDE_MODEL")
+    claude_model: str = Field(default="claude-sonnet-4-6", alias="CLAUDE_MODEL")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
     backend_cors_origins_raw: str = Field(default="http://localhost:3000", alias="BACKEND_CORS_ORIGINS")

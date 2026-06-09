@@ -22,6 +22,27 @@ Cloud Shell allows operators to execute `nb` commands against cloud infrastructu
 
 ---
 
+## ADR-005 — Claude model defaults must be current and environment-overridable
+
+**Date:** 2026-06-08
+**Status:** Accepted
+
+### Context
+
+`claude_model` defaulted to `"claude-3-5-sonnet-latest"`, an alias that no longer resolves correctly against the Anthropic API used by the project. If `CLAUDE_MODEL` is not explicitly set in a deployment, the integration fails at runtime with a model-not-found error that can be misdiagnosed as a credential problem.
+
+### Decision
+
+The code default is `"claude-sonnet-4-6"`. Production environments must explicitly set `CLAUDE_MODEL` rather than relying on the code default. The default exists for development and demo use only.
+
+### Consequences
+
+- Development and demo environments work without explicit `CLAUDE_MODEL` configuration.
+- A wrong default fails at runtime, not silently — the error is now a known-good model name.
+- Production must pin the model explicitly; the code default is a last-resort safety net, not operational configuration.
+
+---
+
 ## ADR-004 — AWS RoleSessionName must be traceable
 
 **Date:** 2026-06-08

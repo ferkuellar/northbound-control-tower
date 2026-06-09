@@ -23,6 +23,12 @@ _Last updated: 2026-06-08_
 - `tests/test_cloud_shell.py` — 5 feature flag tests added
 - Result: 159 passed
 
+**Claude model default updated** (`ai: update default claude model configuration`)
+- `core/config.py` — `claude_model` default: `claude-3-5-sonnet-latest` → `claude-sonnet-4-6`
+- `.env.example` — `CLAUDE_MODEL` alineado al mismo valor
+- `tests/test_production_secrets.py` — 3 tests de configuración AI agregados
+- Result: 181 passed
+
 **Traceable AWS role session names** (`security: add traceable aws role session names`)
 - `collectors/aws/session.py` — `build_role_session_name()` helper; `AWSSessionFactory` accepts `user_id` and `operation`; hardcoded `"northbound-control-tower-inventory"` eliminated
 - `tests/test_aws_session.py` — 13 tests (helper formats, assume_role mock, defensive check)
@@ -49,7 +55,7 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **178 passed** as of 2026-06-08
+- **181 passed** as of 2026-06-08
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
