@@ -69,6 +69,26 @@
 
 ---
 
+## RISK-006 — CSP baseline still allows unsafe-inline
+
+**Severity:** Medium
+**Likelihood:** Low (no known XSS vector)
+**Status:** Active — accepted for this phase
+
+**Description:** The `Content-Security-Policy` baseline permits `'unsafe-inline'` for both `script-src` and `style-src` to maintain compatibility with xterm and current frontend bundles. `'unsafe-inline'` limits the protection CSP provides against injected scripts — a successful XSS can still execute inline code.
+
+**Mitigation applied:**
+- CSP baseline is set; absence-of-header finding is resolved for auditors.
+- `default-src 'self'` blocks external resource loading.
+- `frame-ancestors 'none'` supplements `X-Frame-Options: DENY`.
+- Cloud Shell is disabled by default (ADR-001), reducing XSS blast radius.
+
+**Residual risk:** `'unsafe-inline'` reduces the effectiveness of CSP against DOM-based and reflected XSS attacks.
+
+**Recommended next control:** In a future sprint, audit frontend bundle for inline script/style requirements and migrate to nonce-based or hash-based CSP. Remove `'unsafe-inline'` once compatibility is confirmed.
+
+---
+
 ## RISK-003 — Terraform apply surface not gated at command level
 
 **Severity:** High

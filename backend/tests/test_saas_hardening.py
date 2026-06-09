@@ -222,3 +222,52 @@ def test_cors_does_not_use_wildcard_headers() -> None:
     source = inspect.getsource(main_module)
     assert 'allow_headers=["*"]' not in source
     assert "allow_headers=['*']" not in source
+
+
+# ── Content-Security-Policy tests ─────────────────────────────────────────────
+
+def test_csp_header_present() -> None:
+    client = TestClient(app)
+    response = client.get("/health")
+    assert "content-security-policy" in response.headers
+
+
+def test_csp_contains_required_directives() -> None:
+    client = TestClient(app)
+    response = client.get("/health")
+    csp = response.headers["content-security-policy"]
+    assert "default-src 'self'" in csp
+    assert "script-src 'self' 'unsafe-inline'" in csp
+    assert "style-src 'self' 'unsafe-inline'" in csp
+    assert "img-src 'self' data:" in csp
+    assert "connect-src 'self'" in csp
+    assert "frame-ancestors 'none'" in csp
+
+
+def test_existing_security_headers_preserved_alongside_csp() -> None:
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert "content-security-policy" in response.headers
+
+
+def test_csp_setdefault_does_not_overwrite_existing() -> None:
+    # Verify setdefault semantics: if an upstream handler already sets CSP,
+    # SecurityHeadersMiddleware must not replace it with the baseline value.
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse as _JSONResponse
+    from security.headers import SecurityHeadersMiddleware
+
+    isolated = FastAPI()
+    isolated.add_middleware(SecurityHeadersMiddleware)
+
+    @isolated.get("/_csp-override-probe")
+    def _probe():
+        resp = _JSONResponse({"ok": True})
+        resp.headers["Content-Security-Policy"] = "default-src 'none'"
+        return resp
+
+    probe_client = TestClient(isolated)
+    resp = probe_client.get("/_csp-override-probe")
+    assert resp.headers["content-security-policy"] == "default-src 'none'"

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-08_
+_Last updated: 2026-06-09_
 
 ## Completed
 
@@ -55,6 +55,11 @@ _Last updated: 2026-06-08_
 - `tests/test_saas_hardening.py` — 6 CORS preflight tests added
 - Result: 165 passed
 
+**Baseline Content-Security-Policy** (`security: add baseline content security policy header`)
+- `security/headers.py` — `Content-Security-Policy` via `setdefault` in `SecurityHeadersMiddleware`
+- `tests/test_saas_hardening.py` — 4 tests agregados (CSP present, directives, headers preserved, setdefault no-overwrite)
+- Result: 216 passed, 1 skipped
+
 ## Roadmap Queue
 
 Priority order per CLAUDE.md:
@@ -71,10 +76,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **212 passed, 1 skipped** as of 2026-06-08
+- **216 passed, 1 skipped** as of 2026-06-09
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss) and RISK-003 (terraform apply) are tracked open.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), and RISK-006 (CSP unsafe-inline) are tracked open.

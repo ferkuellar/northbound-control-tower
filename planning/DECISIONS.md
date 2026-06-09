@@ -1,5 +1,27 @@
 # Architecture Decisions
 
+## ADR-009 — Backend responses must include a baseline Content-Security-Policy
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`SecurityHeadersMiddleware` set `X-Frame-Options` and `X-Content-Type-Options` but no `Content-Security-Policy`. Enterprise auditors flag the absence of CSP regardless of other controls. Cloud Shell, command execution, and terminal components (xterm) increase the blast radius of any XSS — a CSP header reduces that surface even at baseline.
+
+### Decision
+
+`SecurityHeadersMiddleware` adds `Content-Security-Policy` via `response.headers.setdefault()`. The baseline policy restricts sources to `'self'` while temporarily allowing `'unsafe-inline'` for frontend/xterm compatibility. `setdefault` ensures a stricter upstream policy from a proxy, CDN, or gateway is never downgraded by the application.
+
+### Consequences
+
+- Backend responses carry a CSP header that satisfies enterprise audit findings.
+- `'unsafe-inline'` remains a residual risk; future hardening must move to nonce/hash-based policies.
+- `frame-ancestors 'none'` reinforces anti-clickjacking alongside the retained `X-Frame-Options: DENY`.
+- Adding new frontend resource origins (fonts, CDN assets, WebSocket) requires extending the policy.
+
+---
+
 ## ADR-001 — Cloud Shell opt-in via CLOUD_SHELL_ENABLED
 
 **Date:** 2026-06-08
