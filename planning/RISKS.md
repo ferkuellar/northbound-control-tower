@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-014 — OCI Vault provider requires cloud-side configuration not yet validated end-to-end
+
+**Severity:** Medium
+**Likelihood:** High (any production deployment before OCI onboarding)
+**Status:** Active — production deployment blocked until OCI Vault is configured
+
+**Description:** `OCIVaultSecretProvider` implements the OCI Vault lookup flow (vault → compartment → secret bundle → base64 decode) but has not been tested against a live OCI environment. It requires: a valid `~/.oci/config` or instance/resource principal authentication, an active OCI Vault OCID, IAM policies granting `SECRET_BUNDLE_READ` on the vault, and secrets pre-loaded with the correct names. Until this is validated, production deployment remains blocked (startup raises `RuntimeError` without `OCI_VAULT_ID`).
+
+**Mitigation applied:**
+- Production startup fails fast if `OCI_VAULT_ID` is not set.
+- `get_secret_provider()` raises before any `.env` fallback occurs.
+- All tests use mocks — no real OCI calls are made.
+
+**Residual risk:** Until a live OCI Vault is configured and the end-to-end flow is validated, production cannot start. This is intentional — the alternative (silent `.env` fallback) is worse.
+
+**Recommended next control:** Validate the OCI Vault provider end-to-end in a staging environment. Document the required IAM policy and secret naming conventions in `docs/OPERATIONS.md`.
+
+---
+
 ## RISK-013 — External scripts referencing the removed root terraform-catalog/ path will fail
 
 **Severity:** Low

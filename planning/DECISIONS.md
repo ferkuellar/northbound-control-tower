@@ -1,5 +1,32 @@
 # Architecture Decisions
 
+## ADR-017 — Production secrets must come from a cloud secret provider, not from .env
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`get_secret_provider()` previously returned `EnvSecretProvider` unconditionally in all environments, including production. This meant production could run silently with secrets read from a `.env` file — a pattern that enterprise auditors flag immediately and that exposes credentials through backups, image artifacts, and misconfigured deployments.
+
+### Decision
+
+`get_secret_provider()` distinguishes environments:
+- **Development/test**: `EnvSecretProvider` (reads process environment / `.env`).
+- **Production with `OCI_VAULT_ID` set**: `OCIVaultSecretProvider` (reads from OCI Vault).
+- **Production without `OCI_VAULT_ID`**: raises `RuntimeError` — fail-fast rather than silently degrading to `.env`.
+
+`_validate_production_secrets()` in `api/main.py` enforces this at startup: production will not start without `OCI_VAULT_ID`. OCI Vault is the first supported cloud secret provider; AWS Secrets Manager / SSM are future sprints.
+
+### Consequences
+
+- Production startup blocks if `OCI_VAULT_ID` is not configured — intentional fail-fast.
+- `.env` is now a development-only mechanism; operators cannot accidentally deploy production relying on a local file.
+- `OCIVaultSecretProvider` requires a valid OCI SDK configuration and IAM permissions on the vault — not yet validated end-to-end in a live OCI environment.
+- AWS deployments need `AWSSecretsManagerProvider` or `SSMParameterStoreProvider` in a future sprint.
+
+---
+
 ## ADR-016 — Terraform catalog has a single source of truth: backend/terraform-catalog/
 
 **Date:** 2026-06-08

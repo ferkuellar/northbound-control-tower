@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-08 (terraform catalog consolidation)_
+_Last updated: 2026-06-09 (production secret provider)_
 
 ## Completed
 
@@ -61,6 +61,16 @@ _Last updated: 2026-06-08 (terraform catalog consolidation)_
 - Diferencias vs guía: `Finding.rule_id` requerido; `CloudScore.summary` requerido; sin `formula_version`/`findings_count`/`weights_used`/`domain_scores`
 - ADR-011, RISK-008 documentados
 - Result: 223 passed, 1 skipped (3 fallos pre-existentes en test_reporting_engine por rate limit Redis compartido — no relacionados)
+
+**Production secret provider abstraction** (`security: add production secret provider abstraction`)
+- `security/secrets.py` — `OCIVaultSecretProvider` added (lazy OCI import, vault→compartment→bundle→base64 flow, 404 guard, no secret logging); `get_secret_provider()` updated with production/development split; production without `OCI_VAULT_ID` raises `RuntimeError`
+- `core/config.py` — `oci_vault_id: str | None` and `secret_provider: str = "env"` added
+- `api/main.py` — `_validate_production_secrets()` extended: production without `OCI_VAULT_ID` raises at startup
+- `.env.example` — `OCI_VAULT_ID=` and `SECRET_PROVIDER=env` documented with comments; no real OCIDs
+- `tests/test_production_secrets.py` — `test_production_with_strong_secret_passes` updated to include `oci_vault_id`
+- `tests/test_secrets_provider.py` — created; 18 tests covering EnvSecretProvider, development/test/local get_secret_provider, production raises without vault, production returns OCI provider with vault, OCI constructor, region injection, no-SDK raises, get_secret happy path, empty result, 404 handling, no-log assertion, startup validation guard, .env.example check
+- ADR-017, RISK-014 documented
+- Result: 312 passed, 4 skipped
 
 **Duplicate root Terraform catalog removed** (`repo: remove duplicate root terraform catalog`)
 - `terraform-catalog/` (root, 5 files) — deleted via `git rm -r`
@@ -129,10 +139,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **294 passed, 3 skipped** as of 2026-06-08 (prompt evaluator sprint)
+- **312 passed, 4 skipped** as of 2026-06-09 (production secret provider sprint)
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), and RISK-013 (root terraform-catalog refs) are tracked.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), and RISK-014 (OCI Vault not yet validated e2e) are tracked.

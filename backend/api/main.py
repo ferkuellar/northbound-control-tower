@@ -41,6 +41,11 @@ def _validate_production_secrets() -> None:
             "DATABASE_URL contains the default development password. "
             "Set a strong POSTGRES_PASSWORD and update DATABASE_URL before running in production."
         )
+    if not settings.oci_vault_id:
+        raise RuntimeError(
+            "Production secrets must come from a cloud secret provider. "
+            "Set OCI_VAULT_ID before running in production."
+        )
 
 
 def create_app() -> FastAPI:

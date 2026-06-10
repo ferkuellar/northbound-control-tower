@@ -19,6 +19,7 @@ def test_production_with_strong_secret_passes() -> None:
         mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
         mock.credential_encryption_key = "a-valid-fernet-key"
         mock.database_url = "postgresql+psycopg://nct:str0ng-pass@postgres:5432/nct"
+        mock.oci_vault_id = "ocid1.vault.oc1.iad.test.aaaaaa"
         _validate_production_secrets()  # must not raise
 
 
