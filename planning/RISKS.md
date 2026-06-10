@@ -1,5 +1,23 @@
 # Risk Register
 
+## RISK-016 — BACKEND_CORS_ORIGINS must be updated when the production frontend domain changes
+
+**Severity:** Medium
+**Likelihood:** Low (but silent when it happens)
+**Status:** Active — requires operational discipline
+
+**Description:** The production CORS allowlist is static configuration. If the frontend domain changes (e.g., custom domain, rebrand, new CDN endpoint) and `BACKEND_CORS_ORIGINS` is not updated, all browser requests from the new domain will fail with CORS errors. The backend remains healthy and logs no application error — the failure is visible only in the browser console and network tab.
+
+**Mitigation applied:**
+- Production startup blocks localhost origins — misconfigured localhost deployments are caught at boot.
+- `.env.example` documents the production example value.
+
+**Residual risk:** A domain change after deployment requires a config update and restart. No automated detection exists for stale CORS configuration.
+
+**Recommended next control:** Add a CORS health probe to smoke tests that verifies the configured origins match the expected production domain after each deployment.
+
+---
+
 ## RISK-015 — CI pipeline validates basic quality only; no security scanning, migration tests, or deployment verification
 
 **Severity:** Low

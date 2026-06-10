@@ -123,6 +123,15 @@ _Last updated: 2026-06-09 (production secret provider)_
 - `tests/test_saas_hardening.py` — 4 tests agregados (CSP present, directives, headers preserved, setdefault no-overwrite)
 - Result: 216 passed, 1 skipped
 
+**CORS localhost guard in production** (`infra: fail fast on localhost cors in production`)
+- `api/main.py` — `_validate_production_secrets()` extended: `"localhost" in settings.backend_cors_origins_raw.lower()` raises `RuntimeError` when `APP_ENV=production`
+- `.env.example` — `BACKEND_CORS_ORIGINS` updated from `http://localhost:3000` to `https://app.northbound.io` with production/dev examples documented
+- `docker-compose.yml` — not modified; `:-http://localhost:3000` fallback intentionally kept (compose is local/dev only)
+- `tests/test_production_secrets.py` — 7 new tests: localhost raises, error text, real domain passes, dev passes, test env passes, mixed list raises, case-insensitive raises; `backend_cors_origins_raw` added to existing production pass test
+- `tests/test_secrets_provider.py` — `backend_cors_origins_raw` added to `test_production_validate_passes_with_oci_vault_id`
+- ADR-019, RISK-016 documented
+- Result: 319 passed, 4 skipped
+
 **Baseline CI pipeline** (`ci: add baseline github actions pipeline`)
 - `.github/workflows/ci.yml` — created; two jobs: `backend` (Python 3.12 + PostgreSQL 16 service + ruff + pytest) and `frontend` (Node 22 + npm ci + eslint + next build)
 - PostgreSQL 16 service spun up in CI backend job; Alembic `upgrade head` runs before tests
@@ -147,10 +156,10 @@ Priority order per CLAUDE.md:
 
 ## Test Suite Baseline
 
-- **312 passed, 4 skipped** as of 2026-06-09 (production secret provider sprint)
+- **319 passed, 4 skipped** as of 2026-06-09 (CORS localhost guard)
 - No known failures or skips
 - Warning: `passlib` uses deprecated `crypt` module (Python 3.12); no functional impact
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), RISK-014 (OCI Vault not yet validated e2e), and RISK-015 (CI basic quality only) are tracked.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), RISK-014 (OCI Vault not yet validated e2e), RISK-015 (CI basic quality only), and RISK-016 (CORS domain change) are tracked.

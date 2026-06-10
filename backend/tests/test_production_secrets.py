@@ -20,6 +20,7 @@ def test_production_with_strong_secret_passes() -> None:
         mock.credential_encryption_key = "a-valid-fernet-key"
         mock.database_url = "postgresql+psycopg://nct:str0ng-pass@postgres:5432/nct"
         mock.oci_vault_id = "ocid1.vault.oc1.iad.test.aaaaaa"
+        mock.backend_cors_origins_raw = "https://app.northbound.io"
         _validate_production_secrets()  # must not raise
 
 
@@ -165,3 +166,67 @@ def test_env_example_contains_no_real_api_key() -> None:
     content = env_example.read_text(encoding="utf-8")
     real_key_pattern = re.compile(r"ANTHROPIC_API_KEY=sk-ant-api03-[A-Za-z0-9_\-]{20,}")
     assert not real_key_pattern.search(content), ".env.example must not contain a real Anthropic API key"
+
+
+# ── CORS localhost guard ───────────────────────────────────────────────────────
+
+def _production_mock_base(mock) -> None:
+    """Set all required production fields except CORS so individual tests control it."""
+    mock.app_env = "production"
+    mock.jwt_secret_key = "a-very-long-random-secret-not-the-default"
+    mock.credential_encryption_key = "a-valid-fernet-key"
+    mock.database_url = "postgresql+psycopg://nct:str0ng-pass@postgres:5432/nct"
+    mock.oci_vault_id = "ocid1.vault.oc1.iad.test.aaaaaa"
+
+
+def test_production_with_localhost_cors_raises() -> None:
+    with patch("api.main.settings") as mock:
+        _production_mock_base(mock)
+        mock.backend_cors_origins_raw = "http://localhost:3000"
+        with pytest.raises(RuntimeError, match="BACKEND_CORS_ORIGINS contains localhost in production"):
+            _validate_production_secrets()
+
+
+def test_production_localhost_cors_error_mentions_set_domains() -> None:
+    with patch("api.main.settings") as mock:
+        _production_mock_base(mock)
+        mock.backend_cors_origins_raw = "http://localhost:3000"
+        with pytest.raises(RuntimeError, match="Set the actual domain"):
+            _validate_production_secrets()
+
+
+def test_production_with_real_domain_cors_passes() -> None:
+    with patch("api.main.settings") as mock:
+        _production_mock_base(mock)
+        mock.backend_cors_origins_raw = "https://app.northbound.io"
+        _validate_production_secrets()  # must not raise
+
+
+def test_development_with_localhost_cors_passes() -> None:
+    with patch("api.main.settings") as mock:
+        mock.app_env = "development"
+        mock.backend_cors_origins_raw = "http://localhost:3000"
+        _validate_production_secrets()  # must not raise
+
+
+def test_test_env_with_localhost_cors_passes() -> None:
+    with patch("api.main.settings") as mock:
+        mock.app_env = "test"
+        mock.backend_cors_origins_raw = "http://localhost:3000"
+        _validate_production_secrets()  # must not raise
+
+
+def test_production_with_mixed_origins_containing_localhost_raises() -> None:
+    with patch("api.main.settings") as mock:
+        _production_mock_base(mock)
+        mock.backend_cors_origins_raw = "https://app.northbound.io,http://localhost:3000"
+        with pytest.raises(RuntimeError, match="BACKEND_CORS_ORIGINS contains localhost in production"):
+            _validate_production_secrets()
+
+
+def test_production_cors_localhost_check_is_case_insensitive() -> None:
+    with patch("api.main.settings") as mock:
+        _production_mock_base(mock)
+        mock.backend_cors_origins_raw = "http://LOCALHOST:3000"
+        with pytest.raises(RuntimeError, match="BACKEND_CORS_ORIGINS contains localhost in production"):
+            _validate_production_secrets()

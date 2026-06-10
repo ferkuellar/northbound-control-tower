@@ -46,6 +46,11 @@ def _validate_production_secrets() -> None:
             "Production secrets must come from a cloud secret provider. "
             "Set OCI_VAULT_ID before running in production."
         )
+    if "localhost" in settings.backend_cors_origins_raw.lower():
+        raise RuntimeError(
+            "BACKEND_CORS_ORIGINS contains localhost in production. "
+            "Set the actual domain(s)."
+        )
 
 
 def create_app() -> FastAPI:

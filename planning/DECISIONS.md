@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## ADR-019 — Production must fail fast if BACKEND_CORS_ORIGINS contains localhost
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`BACKEND_CORS_ORIGINS` defaults to `http://localhost:3000` for local development. If not overridden before a production deployment, the backend would start successfully but silently block all browser requests from the real frontend domain — the failure appears as a CORS error in the browser and is easy to misdiagnose as a network or TLS issue.
+
+### Decision
+
+`_validate_production_secrets()` checks `settings.backend_cors_origins_raw.lower()` for the string `"localhost"` when `APP_ENV=production`. If present, it raises `RuntimeError` with a message that names both the misconfigured variable and the required fix. Development, test, and local environments are unaffected.
+
+### Consequences
+
+- Production cannot start with localhost origins — intentional fail-fast.
+- `.env.example` now documents `BACKEND_CORS_ORIGINS=https://app.northbound.io` as the production example.
+- Operators must set the real frontend domain before deploying.
+
+---
+
 ## ADR-018 — Every push and pull request must pass a minimum CI pipeline
 
 **Date:** 2026-06-09
