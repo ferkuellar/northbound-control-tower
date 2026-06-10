@@ -146,7 +146,7 @@ def test_post_analyze_enqueues_celery_task_with_string_ids() -> None:
     try:
         with patch("api.routes.ai.run_ai_analysis") as mock_task:
             mock_task.delay = MagicMock()
-            response = client.post(
+            client.post(
                 "/api/v1/ai/analyze",
                 json={"analysis_type": "executive_summary", "provider": "deepseek"},
             )
