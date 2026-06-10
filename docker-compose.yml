@@ -2,6 +2,7 @@ name: northbound-control-tower
 
 services:
   backend:
+    image: ghcr.io/your-org/nct-backend:${GIT_SHA:-latest}
     build:
       context: ./backend
     container_name: nct-backend
@@ -44,8 +45,7 @@ services:
       start_period: 20s
 
   worker:
-    build:
-      context: ./backend
+    image: ghcr.io/your-org/nct-backend:${GIT_SHA:-latest}
     container_name: nct-worker
     environment:
       APP_ENV: ${APP_ENV:-development}
@@ -93,6 +93,7 @@ services:
       start_period: 20s
 
   frontend:
+    image: ghcr.io/your-org/nct-frontend:${GIT_SHA:-latest}
     build:
       context: ./frontend
     container_name: nct-frontend

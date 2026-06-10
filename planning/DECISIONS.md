@@ -1,5 +1,28 @@
 # Architecture Decisions
 
+## ADR-020 — Docker images for production must use immutable Git SHA tags
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+Services `backend`, `worker`, and `frontend` were built without an explicit `image:` field. Docker Compose assigned no stable name to the resulting images. A redeploy could silently produce a different image from the same tag, rollback was impossible without full rebuild, and there was no way to determine which commit was running in production from container metadata alone.
+
+### Decision
+
+`docker-compose.yml` assigns explicit `image:` fields to all application services using `${GIT_SHA:-latest}`. `backend` and `worker` share the same image (`nct-backend`) since they execute the same codebase. `frontend` gets its own image (`nct-frontend`). The `Makefile` exposes `build`, `deploy`, and `rollback` targets that propagate `GIT_SHA`. In production, `GIT_SHA` must be set to the full or short commit SHA from CI/CD — `latest` is not a valid production tag.
+
+### Consequences
+
+- Each production deployment is tied to a specific, auditable commit SHA.
+- Rollback is operational: `GIT_SHA=<previous-sha> make rollback` re-pulls and restarts with that tag.
+- Local development is unaffected: `make up` continues to work without setting `GIT_SHA` (falls back to `latest`).
+- `worker` no longer has a separate `build:` — it reuses the image built by `backend`, eliminating duplicate builds.
+- Registry login, image push, and CI/CD build pipeline are out of scope for this sprint.
+
+---
+
 ## ADR-019 — Production must fail fast if BACKEND_CORS_ORIGINS contains localhost
 
 **Date:** 2026-06-09

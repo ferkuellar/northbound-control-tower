@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-017 — Image tagging enables rollback only after CI/CD publishes immutable tags
+
+**Severity:** Medium
+**Likelihood:** High (until build/push automation exists)
+**Status:** Active — accepted for this phase
+
+**Description:** The `${GIT_SHA:-latest}` tagging strategy in `docker-compose.yml` establishes the pattern for immutable image references, but rollback depends on previously published images being available in the registry. Until a CI/CD pipeline builds and pushes images tagged with each commit SHA, the only images available locally are those built on the current machine. Specifying `GIT_SHA=<previous-sha> make rollback` will fail if that image is not present locally or in the registry.
+
+**Mitigation applied:**
+- `docker-compose.yml` uses `${GIT_SHA:-latest}` — the pattern is in place and production-ready when CI/CD is wired.
+- `make rollback` validates that `GIT_SHA` is explicitly set, preventing accidental rollback to `latest`.
+- `worker` reuses the `nct-backend` image — no divergence between worker and backend versions.
+
+**Residual risk:** Rollback is a documented operational pattern, not a fully automated release process. A deployment without prior published SHA tags cannot roll back to a specific version.
+
+**Recommended next control:** Add a CI/CD step that builds both images on every push to `main`, tags with the commit SHA, and pushes to `ghcr.io/your-org/`. Once in place, any prior SHA becomes a valid rollback target.
+
+---
+
 ## RISK-016 — BACKEND_CORS_ORIGINS must be updated when the production frontend domain changes
 
 **Severity:** Medium

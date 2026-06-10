@@ -1,4 +1,6 @@
-.PHONY: setup up down restart logs ps backend-test backend-lint frontend-lint compose-config clean
+GIT_SHA ?= $(shell git rev-parse --short HEAD)
+
+.PHONY: setup up down restart logs ps backend-test backend-lint frontend-lint compose-config clean build deploy rollback
 
 setup:
 	cp -n .env.example .env
@@ -33,3 +35,13 @@ compose-config:
 
 clean:
 	docker compose down -v
+
+build:
+	GIT_SHA=$(GIT_SHA) docker compose build
+
+deploy:
+	GIT_SHA=$(GIT_SHA) docker compose up -d
+
+rollback:
+	@test -n "$(GIT_SHA)" || (echo "Set GIT_SHA=<previous-sha> to rollback" && exit 1)
+	GIT_SHA=$(GIT_SHA) docker compose up -d
