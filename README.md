@@ -239,7 +239,7 @@ Phase boundaries are intentional. New capabilities are added only after the curr
 Proprietary. All rights reserved.
 © Northbound — NorthFinOps 
 
-For licensing inquiries, contact the maintainers through the repository.
+For licensing inquiries, contact: [hola@northbound.io](mailto:hola@northbound.io)
 
 ---
 
