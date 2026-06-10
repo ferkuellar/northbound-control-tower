@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend lint and tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nct
+          POSTGRES_PASSWORD: nct_dev_password
+          POSTGRES_DB: nct
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nct"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql+psycopg://nct:nct_dev_password@localhost:5432/nct
+        run: |
+          cd backend
+          alembic upgrade head
+
+      - name: Backend lint
+        run: |
+          cd backend
+          ruff check .
+
+      - name: Backend tests
+        env:
+          APP_ENV: test
+          DATABASE_URL: postgresql+psycopg://nct:nct_dev_password@localhost:5432/nct
+          JWT_SECRET_KEY: ci-only-jwt-secret-not-for-production-use-ever
+          # Valid Fernet key for CI only — not a secret, not used in production
+          CREDENTIAL_ENCRYPTION_KEY: Y2ktdGVzdC1rZXktZG8tbm90LXVzZS1pbi1wcm9kISE=
+          CLOUD_SHELL_ENABLED: "false"
+          TERRAFORM_APPLY_ENABLED: "false"
+          AI_PROVIDER: none
+        run: |
+          cd backend
+          python -m pytest --tb=short
+
+  frontend:
+    name: Frontend lint and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Frontend lint
+        run: |
+          cd frontend
+          npm run lint
+
+      - name: Frontend build
+        run: |
+          cd frontend
+          npm run build

@@ -1,5 +1,32 @@
 # Architecture Decisions
 
+## ADR-018 — Every push and pull request must pass a minimum CI pipeline
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+No automated quality gate existed before this sprint. Any push could break backend lint, tests, or the frontend build without any signal. For an enterprise product, this is an unacceptable quality and operational risk.
+
+### Decision
+
+`.github/workflows/ci.yml` runs on every `push` and `pull_request`. It enforces two jobs:
+
+- **Backend**: Python 3.12, installs `backend/requirements.txt`, spins up a PostgreSQL 16 service, runs Alembic migrations, then `ruff check .` and `pytest --tb=short`.
+- **Frontend**: Node 22, `npm ci`, `npm run lint`, `npm run build`.
+
+CI must not deploy, apply Terraform, or require cloud provider credentials. All sensitive values used in CI are dummies scoped to the test environment and not valid for any real cloud account.
+
+### Consequences
+
+- Broken lint or tests block merge — intended behavior.
+- PostgreSQL service in CI adds ~30 seconds to the backend job; accepted for test fidelity.
+- The `CREDENTIAL_ENCRYPTION_KEY` in CI is a fixed URL-safe base64 dummy. It produces valid Fernet ciphertext in tests but is not used in any real environment.
+- CD, Docker image publishing, Terraform, and security scanning are intentionally out of scope for this pipeline.
+
+---
+
 ## ADR-017 — Production secrets must come from a cloud secret provider, not from .env
 
 **Date:** 2026-06-09

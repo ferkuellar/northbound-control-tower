@@ -123,6 +123,14 @@ _Last updated: 2026-06-09 (production secret provider)_
 - `tests/test_saas_hardening.py` — 4 tests agregados (CSP present, directives, headers preserved, setdefault no-overwrite)
 - Result: 216 passed, 1 skipped
 
+**Baseline CI pipeline** (`ci: add baseline github actions pipeline`)
+- `.github/workflows/ci.yml` — created; two jobs: `backend` (Python 3.12 + PostgreSQL 16 service + ruff + pytest) and `frontend` (Node 22 + npm ci + eslint + next build)
+- PostgreSQL 16 service spun up in CI backend job; Alembic `upgrade head` runs before tests
+- `CREDENTIAL_ENCRYPTION_KEY` in CI: deterministic URL-safe base64 Fernet dummy — `Y2ktdGVzdC1rZXktZG8tbm90LXVzZS1pbi1wcm9kISE=` — not a real secret
+- Defensive scan: no cloud secrets, no API keys, no `terraform apply` in workflow
+- ADR-018, RISK-015 documented
+- YAML validated: `workflow yaml ok`
+
 ## Roadmap Queue
 
 Priority order per CLAUDE.md:
@@ -145,4 +153,4 @@ Priority order per CLAUDE.md:
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), and RISK-014 (OCI Vault not yet validated e2e) are tracked.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), RISK-014 (OCI Vault not yet validated e2e), and RISK-015 (CI basic quality only) are tracked.

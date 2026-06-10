@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-015 — CI pipeline validates basic quality only; no security scanning, migration tests, or deployment verification
+
+**Severity:** Low
+**Likelihood:** N/A (known scope limitation)
+**Status:** Active — accepted for this phase
+
+**Description:** The initial CI pipeline (`ci.yml`) covers backend lint/tests and frontend lint/build. It does not cover: SAST/dependency scanning, Docker image builds, database migration rollback tests, E2E tests, or any deployment verification. A change could pass CI and still introduce a silent security issue, a broken Docker image, or a migration that applies but cannot roll back.
+
+**Mitigation applied:**
+- Alembic migrations run against a live PostgreSQL 16 service in CI — migration correctness is tested on every push.
+- `ruff check` catches obvious security anti-patterns (e.g., hardcoded strings flagged by rules).
+- Full test suite (312 tests) runs on every push, covering encryption, secret provider, CORS, CSP, and auth paths.
+
+**Residual risk:** No SAST, no dependency vulnerability scan, no Docker image smoke test.
+
+**Recommended next control:** Add `pip-audit` or `trivy` for dependency scanning in a future sprint. Add CodeQL after initial CI stabilizes.
+
+---
+
 ## RISK-014 — OCI Vault provider requires cloud-side configuration not yet validated end-to-end
 
 **Severity:** Medium
