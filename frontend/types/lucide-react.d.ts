@@ -14,6 +14,7 @@ declare module "lucide-react" {
   export const ArrowRight: LucideIcon;
   export const ArrowUpRight: LucideIcon;
   export const BarChart3: LucideIcon;
+  export const BrainCircuit: LucideIcon;
   export const ClipboardList: LucideIcon;
   export const Database: LucideIcon;
   export const Gauge: LucideIcon;

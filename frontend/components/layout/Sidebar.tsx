@@ -6,7 +6,7 @@ import {
   Database,
   Gauge,
   LayoutDashboard,
-  ShieldAlert,
+  BrainCircuit,
 } from "lucide-react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -27,12 +27,12 @@ type NavItem = {
 };
 
 const operations: NavItem[] = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard, active: true },
-  { label: "Inventory", href: "#inventory", icon: Database },
-  { label: "Findings", href: "#findings", icon: ClipboardList, badge: true },
-  { label: "Scores", href: "#scores", icon: BarChart3 },
-  { label: "Risks", href: "#risks", icon: ShieldAlert },
-  { label: "Trends", href: "#trends", icon: Gauge },
+  { label: "Overview",    href: "/dashboard", icon: LayoutDashboard },
+  { label: "Inventory",   href: "/inventory", icon: Database },
+  { label: "Findings",    href: "/findings",  icon: ClipboardList, badge: true },
+  { label: "Scores",      href: "/scores",    icon: BarChart3 },
+  { label: "AI Analysis", href: "/ai",        icon: BrainCircuit },
+  { label: "Reports",     href: "/reports",   icon: ClipboardList },
 ];
 
 const administration: NavItem[] = [
