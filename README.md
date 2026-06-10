@@ -212,6 +212,7 @@ make clean          # Stop + remove volumes
 | Document | Purpose | Audience |
 |---|---|---|
 | **README** *(this file)* | Platform overview, capabilities, architecture | All |
+| [CHANGELOG.md](./CHANGELOG.md) | Release history and notable changes by phase | All |
 | [ARCHITECTURE.md](./docs/files/ARCHITECTURE.md) | Component design, data model, technical decisions | Engineers, Architects |
 | [QUICKSTART.md](./docs/files/QUICKSTART.md) | Run the stack locally in under 30 minutes | Engineers |
 | [API_REFERENCE.md](./docs/files/API_REFERENCE.md) | Full endpoint reference, request/response schemas | Developers, Integrators |

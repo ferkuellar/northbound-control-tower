@@ -1,5 +1,26 @@
 # Architecture Decisions
 
+## ADR-021 — CHANGELOG.md follows a practical Keep a Changelog format
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+No changelog existed. Release history was spread across `planning/STATE.md` (sprint-level detail), git commits, and Alembic migration names — none of which is readable by a client, partner, or reviewer entering the repository cold.
+
+### Decision
+
+`CHANGELOG.md` is maintained at the repository root using a practical Keep a Changelog format. Sections are `[Unreleased]` (work landed but not formally tagged) and versioned entries aligned to phase labels (e.g., `[0.1.0] — Phase 0 Foundation`). Entries use categories `Added`, `Changed`, `Security`, and `Documentation`. Release entries should be updated as part of the release process, not reconstructed retroactively.
+
+### Consequences
+
+- Clients, partners, and reviewers can assess what has changed without reading commits or sprint logs.
+- `planning/STATE.md` retains sprint-level engineering detail; `CHANGELOG.md` carries customer-facing and reviewer-facing summaries.
+- Every future release must move the relevant `[Unreleased]` items into a versioned entry with a date.
+
+---
+
 ## ADR-020 — Docker images for production must use immutable Git SHA tags
 
 **Date:** 2026-06-09

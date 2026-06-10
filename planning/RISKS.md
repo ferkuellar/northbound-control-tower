@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-018 — Initial changelog is reconstructed from repository state, not maintained incrementally
+
+**Severity:** Low
+**Likelihood:** Low (documentation debt only)
+**Status:** Active — accepted for this phase
+
+**Description:** `CHANGELOG.md` was created by surveying the current repository state (Alembic migrations, `planning/STATE.md`, docs, and README). It may not capture every historical change or sprint detail with full accuracy. Entries were written to reflect implemented capabilities rather than aspirational ones, but there is no automated mechanism to enforce consistency between new commits and the changelog.
+
+**Mitigation applied:**
+- Content was cross-checked against 18 Alembic migration names, `planning/STATE.md` sprint records, and README capability descriptions.
+- No unimplemented capabilities were included.
+- `[Unreleased]` clearly separates in-progress work from the versioned foundation.
+
+**Residual risk:** Future contributors may land features without updating `CHANGELOG.md`, causing drift over time.
+
+**Recommended next control:** Add a changelog update step to the PR template or release checklist. Consider `git-cliff` or similar tooling to generate draft entries from conventional commits in a future sprint.
+
+---
+
 ## RISK-017 — Image tagging enables rollback only after CI/CD publishes immutable tags
 
 **Severity:** Medium

@@ -1,6 +1,6 @@
 # Project State
 
-_Last updated: 2026-06-09 (docker image git sha tagging)_
+_Last updated: 2026-06-09 (project changelog)_
 
 ## Completed
 
@@ -140,6 +140,11 @@ _Last updated: 2026-06-09 (docker image git sha tagging)_
 - ADR-018, RISK-015 documented
 - YAML validated: `workflow yaml ok`
 
+**Project changelog** (`docs: add project changelog`)
+- `CHANGELOG.md` — created at repo root; `[Unreleased]` covers security sprint + CI + Docker SHA tagging; `[0.1.0]` covers Phase 0 Foundation (migrations 0001–0016, all capabilities)
+- `README.md` — `CHANGELOG.md` row added to Documentation table
+- ADR-021, RISK-018 documented
+
 **Docker image Git SHA tagging** (`build: add docker image git sha tagging`)
 - `docker-compose.yml` — `image: ghcr.io/your-org/nct-backend:${GIT_SHA:-latest}` added to `backend`; `image: ghcr.io/your-org/nct-backend:${GIT_SHA:-latest}` added to `worker` (removed redundant `build:`); `image: ghcr.io/your-org/nct-frontend:${GIT_SHA:-latest}` added to `frontend`
 - `Makefile` — `GIT_SHA ?= $(shell git rev-parse --short HEAD)` at top; `build`, `deploy`, `rollback` targets added; `.PHONY` updated
@@ -168,4 +173,4 @@ Priority order per CLAUDE.md:
 
 ## Active Risks
 
-See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), RISK-014 (OCI Vault not yet validated e2e), RISK-015 (CI basic quality only), RISK-016 (CORS domain change), and RISK-017 (image tagging enables rollback only after CI/CD publishes tags) are tracked.
+See `planning/RISKS.md` — RISK-002 (key loss), RISK-003 (terraform apply), RISK-006 (CSP unsafe-inline), RISK-009 (IAM role misconfiguration), RISK-010 (prompt truncation), RISK-011 (evaluator structural only), RISK-012 (alembic workdir), RISK-013 (root terraform-catalog refs), RISK-014 (OCI Vault not yet validated e2e), RISK-015 (CI basic quality only), RISK-016 (CORS domain change), RISK-017 (image tagging enables rollback only after CI/CD publishes tags), and RISK-018 (changelog reconstructed from repo state, not maintained incrementally) are tracked.
