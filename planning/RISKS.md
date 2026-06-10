@@ -1,5 +1,24 @@
 # Risk Register
 
+## RISK-019 — If Celery workers or Redis are unavailable, AI analyses remain pending indefinitely
+
+**Severity:** High
+**Likelihood:** Medium (any infrastructure failure or misconfiguration)
+**Status:** Active — requires operational monitoring
+
+**Description:** `POST /ai/analyze` creates a pending `AIAnalysis` row and enqueues a Celery task. If the Celery worker or Redis broker is unavailable at dispatch time, the task is not queued and the analysis remains `pending` indefinitely. There is no timeout, expiry, or automatic failure transition for stuck pending jobs. Clients polling `GET /ai/analyses/{id}` will see `pending` with no indication of the infrastructure failure.
+
+**Mitigation applied:**
+- `resume_pending()` transitions through `running` → `completed`/`failed` atomically, so partial failures leave a clear state.
+- Celery task retries twice (`max_retries=2`) on transient errors before failing permanently.
+- `docker-compose.yml` healthchecks cover both Redis and the Celery worker.
+
+**Residual risk:** Analyses created during a broker outage will never transition out of `pending` state. No automatic cleanup or timeout exists.
+
+**Recommended next control:** Add a background job that marks `pending`/`running` analyses as `failed` if they have not completed within `AI_REQUEST_TIMEOUT_SECONDS + buffer`. Expose queue health (depth, error rate) in Prometheus/Grafana.
+
+---
+
 ## RISK-018 — Initial changelog is reconstructed from repository state, not maintained incrementally
 
 **Severity:** Low

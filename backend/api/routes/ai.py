@@ -3,9 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from ai.errors import AIAnalysisError
-from ai.schemas import AIAnalysisListResponse, AIAnalysisRead, AIAnalysisRequest, AIAnalysisResponse, AIContextPreview, AIProviderStatus
+from ai.schemas import AIAnalysisJobAccepted, AIAnalysisListResponse, AIAnalysisRead, AIAnalysisRequest, AIContextPreview, AIProviderStatus
 from ai.service import AIAnalysisService, get_analysis, list_analyses, provider_statuses
+from workers.tasks import run_ai_analysis
 from auth.guards import require_permission
 from auth.permissions import Permission
 from core.config import settings
@@ -55,17 +55,15 @@ def get_context_preview(
     )
 
 
-@router.post("/analyze", response_model=AIAnalysisResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/analyze", response_model=AIAnalysisJobAccepted, status_code=status.HTTP_202_ACCEPTED)
 def analyze(
     payload: AIAnalysisRequest,
     current_user: User = Depends(require_permission(Permission.AI_GENERATE)),
     db: Session = Depends(get_db),
-) -> AIAnalysisResponse:
-    try:
-        analysis = AIAnalysisService(db).generate(current_user=current_user, request=payload)
-    except AIAnalysisError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    return AIAnalysisResponse(analysis=AIAnalysisRead.model_validate(analysis))
+) -> AIAnalysisJobAccepted:
+    analysis = AIAnalysisService(db).create_pending(current_user=current_user, request=payload)
+    run_ai_analysis.delay(str(analysis.id), str(current_user.id))
+    return AIAnalysisJobAccepted(analysis_id=str(analysis.id), status="pending")
 
 
 @router.get("/analyses", response_model=AIAnalysisListResponse)

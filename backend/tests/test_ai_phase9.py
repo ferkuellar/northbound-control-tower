@@ -116,6 +116,14 @@ def _clear_overrides() -> None:
     app.dependency_overrides.clear()
 
 
+def _make_noop_task():
+    """Return a mock that replaces run_ai_analysis with a no-op .delay()."""
+    from unittest.mock import MagicMock
+    mock = MagicMock()
+    mock.delay = MagicMock()
+    return mock
+
+
 class FakeAIProvider:
     provider_name = "deepseek"
     model_name = "fake-model"
@@ -196,17 +204,20 @@ def test_context_preview_is_sanitized() -> None:
 
 
 def test_analyst_can_generate_ai_analysis(monkeypatch: pytest.MonkeyPatch) -> None:
+    # POST /analyze now returns 202 and creates a pending job; the provider is
+    # called asynchronously by the Celery worker, not during the HTTP request.
     user = _seed_ai_user(UserRole.ANALYST)
-    monkeypatch.setattr("ai.service.get_ai_provider", lambda provider=None: FakeAIProvider())
     client = _client_for(user)
     try:
-        response = client.post("/api/v1/ai/analyze", json={"analysis_type": "full_assessment", "provider": "deepseek"})
+        with monkeypatch.context() as m:
+            m.setattr("workers.tasks.run_ai_analysis", _make_noop_task())
+            response = client.post("/api/v1/ai/analyze", json={"analysis_type": "full_assessment", "provider": "deepseek"})
 
-        assert response.status_code == 201
-        body = response.json()["analysis"]
-        assert body["status"] == "completed"
-        assert body["ai_provider"] == "deepseek"
-        assert body["output"]["executive_summary"]
+        assert response.status_code == 202
+        body = response.json()
+        assert body["status"] == "pending"
+        assert "analysis_id" in body
+        uuid.UUID(body["analysis_id"])
     finally:
         _clear_overrides()
 
@@ -214,11 +225,12 @@ def test_analyst_can_generate_ai_analysis(monkeypatch: pytest.MonkeyPatch) -> No
 def test_ai_analysis_list_is_tenant_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
     user = _seed_ai_user(UserRole.ADMIN)
     other_user = _seed_ai_user(UserRole.ADMIN)
-    monkeypatch.setattr("ai.service.get_ai_provider", lambda provider=None: FakeAIProvider())
     client = _client_for(user)
     try:
-        create_response = client.post("/api/v1/ai/analyze", json={"analysis_type": "full_assessment", "provider": "deepseek"})
-        assert create_response.status_code == 201
+        with monkeypatch.context() as m:
+            m.setattr("workers.tasks.run_ai_analysis", _make_noop_task())
+            create_response = client.post("/api/v1/ai/analyze", json={"analysis_type": "full_assessment", "provider": "deepseek"})
+        assert create_response.status_code == 202
     finally:
         _clear_overrides()
 

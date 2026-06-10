@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ai.context_builder import AIContextBuilder
-from ai.enums import AIAnalysisStatus, AIProvider
+from ai.enums import AIAnalysisStatus, AIAnalysisType, AIProvider
 from ai.errors import AIAnalysisError, AIOutputValidationError, AIProviderConfigurationError
 from ai.prompts import PROMPT_VERSION, build_prompt
 from ai.provider import get_ai_provider
@@ -68,6 +68,105 @@ class AIAnalysisService:
             cloud_account_id=cloud_account_id,
             cloud_provider=cloud_provider,
         )
+
+    def create_pending(self, *, current_user: User, request: AIAnalysisRequest) -> AIAnalysis:
+        provider_name = request.provider or AIProvider(settings.ai_provider)
+        analysis = AIAnalysis(
+            tenant_id=current_user.tenant_id,
+            cloud_account_id=request.cloud_account_id,
+            provider=request.cloud_provider,
+            ai_provider=provider_name.value,
+            analysis_type=request.analysis_type.value,
+            status=AIAnalysisStatus.PENDING.value,
+            input_summary={},
+            output={},
+            model_name=None,
+            prompt_version=PROMPT_VERSION,
+            created_by_user_id=current_user.id,
+        )
+        self.db.add(analysis)
+        self.db.flush()
+        create_audit_log(
+            self.db,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            action="ai_analysis_started",
+            resource_type="ai_analysis",
+            resource_id=str(analysis.id),
+            metadata={"provider": provider_name.value, "analysis_type": request.analysis_type.value},
+        )
+        self.db.commit()
+        self.db.refresh(analysis)
+        return analysis
+
+    def resume_pending(self, *, analysis_id: uuid.UUID, current_user: User) -> None:
+        analysis = self.db.scalar(
+            select(AIAnalysis).where(
+                AIAnalysis.id == analysis_id,
+                AIAnalysis.tenant_id == current_user.tenant_id,
+            )
+        )
+        if analysis is None:
+            raise ValueError(f"AI analysis {analysis_id} not found")
+
+        provider_name = AIProvider(analysis.ai_provider)
+        analysis_type_str = analysis.analysis_type
+
+        analysis.status = AIAnalysisStatus.RUNNING.value
+        self.db.commit()
+
+        started = time.perf_counter()
+        try:
+            with operation_span(
+                "ai.analysis",
+                provider=provider_name.value,
+                analysis_type=analysis_type_str,
+                operation_name="ai_analysis",
+            ):
+                provider = get_ai_provider(provider_name)
+                context = self.context_preview(
+                    current_user=current_user,
+                    cloud_account_id=analysis.cloud_account_id,
+                    cloud_provider=analysis.provider,
+                )
+                prompt = build_prompt(AIAnalysisType(analysis_type_str), context)
+                raw_text = provider.generate_analysis(prompt, settings.ai_max_tokens, settings.ai_temperature)
+                output = validate_ai_output(raw_text, context=context)
+            analysis.status = AIAnalysisStatus.COMPLETED.value
+            analysis.input_summary = context
+            analysis.output = output
+            analysis.raw_text = raw_text
+            analysis.model_name = provider.model_name
+            analysis.completed_at = datetime.now(UTC)
+            create_audit_log(
+                self.db,
+                tenant_id=current_user.tenant_id,
+                user_id=current_user.id,
+                action="ai_analysis_completed",
+                resource_type="ai_analysis",
+                resource_id=str(analysis.id),
+                metadata={
+                    "provider": provider.provider_name,
+                    "analysis_type": analysis_type_str,
+                    "execution_time_ms": int((time.perf_counter() - started) * 1000),
+                },
+            )
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, analysis_type_str, "completed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, analysis_type_str, "completed").observe(duration)
+            self.db.commit()
+        except (AIProviderConfigurationError, AIOutputValidationError, ValueError) as exc:
+            self._fail_analysis(analysis, current_user=current_user, error=str(exc), started=started)
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, analysis_type_str, "failed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, analysis_type_str, "failed").observe(duration)
+            AI_ANALYSIS_FAILURES_TOTAL.labels(provider_name.value, analysis_type_str).inc()
+        except Exception:
+            self._fail_analysis(analysis, current_user=current_user, error="AI provider request failed", started=started)
+            duration = time.perf_counter() - started
+            AI_ANALYSIS_REQUESTS_TOTAL.labels(provider_name.value, analysis_type_str, "failed").inc()
+            AI_ANALYSIS_DURATION_SECONDS.labels(provider_name.value, analysis_type_str, "failed").observe(duration)
+            AI_ANALYSIS_FAILURES_TOTAL.labels(provider_name.value, analysis_type_str).inc()
 
     def generate(self, *, current_user: User, request: AIAnalysisRequest) -> AIAnalysis:
         started = time.perf_counter()

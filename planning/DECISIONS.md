@@ -1,5 +1,28 @@
 # Architecture Decisions
 
+## ADR-022 — AI analysis provider calls must run asynchronously through Celery
+
+**Date:** 2026-06-09
+**Status:** Accepted
+
+### Context
+
+`generate()` in `AIAnalysisService` ran the full provider call synchronously inside the Uvicorn request cycle. With `AI_REQUEST_TIMEOUT_SECONDS=90`, a single analysis could block a worker thread for the full timeout duration. Multiple concurrent analysts could exhaust the available worker pool and make the API unresponsive.
+
+### Decision
+
+`POST /ai/analyze` now creates a pending `AIAnalysis` row, enqueues a Celery task (`ai.run_analysis`), and immediately returns `202 Accepted` with `{analysis_id, status: "pending"}`. The Celery worker calls `resume_pending()`, which transitions the analysis through `running` → `completed` or `failed`. Clients poll `GET /ai/analyses/{id}` for the result. Only primitive types (strings/UUIDs) are passed to Celery — no ORM objects.
+
+### Consequences
+
+- HTTP workers are never blocked during AI provider calls.
+- Celery task retries on transient errors (`max_retries=2`, `default_retry_delay=10s`).
+- Failed provider calls mark the analysis as `failed` with a sanitized error message; raw exceptions are never exposed.
+- Clients must implement polling; the old synchronous response contract (201 + full result) is replaced by 202 + async pattern.
+- Redis and Celery workers must be running for analyses to complete — see RISK-019.
+
+---
+
 ## ADR-021 — CHANGELOG.md follows a practical Keep a Changelog format
 
 **Date:** 2026-06-09

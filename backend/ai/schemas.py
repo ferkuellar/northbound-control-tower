@@ -60,3 +60,8 @@ class AIAnalysisResponse(BaseModel):
 class AIAnalysisListResponse(BaseModel):
     items: list[AIAnalysisRead]
     total: int
+
+
+class AIAnalysisJobAccepted(BaseModel):
+    analysis_id: str
+    status: str = "pending"

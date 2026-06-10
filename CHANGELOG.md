@@ -9,6 +9,8 @@ This project follows a practical Keep a Changelog style. Version numbers and pha
 ## [Unreleased]
 
 ### Added
+- Async AI analysis execution: `POST /ai/analyze` now returns `202 Accepted` with `{analysis_id, status: "pending"}`; the provider call runs in a Celery worker. Clients poll `GET /ai/analyses/{id}` for the result.
+- `AIAnalysisStatus.RUNNING` intermediate state to track in-progress Celery jobs.
 - Baseline CI pipeline (backend lint + pytest + Alembic migrations against live PostgreSQL; frontend lint + Next.js build) running on every push and pull request.
 - Immutable Docker image tagging via `GIT_SHA` for `backend`, `worker`, and `frontend` services; `make build`, `make deploy`, and `make rollback` targets in `Makefile`.
 - OCI Vault secret provider abstraction; production deployments require `OCI_VAULT_ID` and fail fast at startup without it.

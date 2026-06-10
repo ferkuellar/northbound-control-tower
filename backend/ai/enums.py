@@ -17,5 +17,6 @@ class AIAnalysisType(StrEnum):
 
 class AIAnalysisStatus(StrEnum):
     PENDING = "pending"
+    RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
